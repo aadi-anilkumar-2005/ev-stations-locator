@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: "absolute",
-    top: 16,
+    top: 48,
     left: 16,
     backgroundColor: "rgba(0, 0, 0, 0.3)",
     padding: 8,
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
   favoriteButton: {
     position: "absolute",
-    top: 16,
+    top: 48,
     right: 16,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     padding: 8,

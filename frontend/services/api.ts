@@ -145,6 +145,9 @@ export const api = {
 
   // --- FAVORITES ---
   getFavorites: async (lat?: number, lng?: number) => {
+    const token = await AsyncStorage.getItem('auth_token');
+    if (!token) return [];
+
     const headers = await getHeaders();
     let url = `${API_BASE_URL}/favorites/`;
     if (lat && lng) {
@@ -156,6 +159,9 @@ export const api = {
   },
 
   addFavorite: async (stationId: number) => {
+    const token = await AsyncStorage.getItem('auth_token');
+    if (!token) return;
+
     const headers = await getHeaders();
     await fetch(`${API_BASE_URL}/favorites/add/`, {
       method: 'POST',
@@ -165,6 +171,9 @@ export const api = {
   },
 
   removeFavorite: async (stationId: number) => {
+    const token = await AsyncStorage.getItem('auth_token');
+    if (!token) return;
+
     const headers = await getHeaders();
     await fetch(`${API_BASE_URL}/favorites/remove/`, {
       method: 'DELETE',
