@@ -5,6 +5,9 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
+  ActivityIndicator,
+  Linking,
+  Platform,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import {
@@ -12,76 +15,216 @@ import {
   Phone,
   Mail,
   MapPin,
-  Star,
   Clock,
   Heart,
-  Wrench,
+  Wifi,
+  Coffee,
+  Armchair,
+  Car,
 } from "lucide-react-native";
+import { useState, useEffect } from "react";
+import { api } from "../services/api";
+
+const getAmenityIcon = (name: string) => {
+  const n = name.toLowerCase();
+  if (n.includes("wifi")) return <Wifi size={32} color="#4b5563" />;
+  if (n.includes("coffee") || n.includes("refreshment"))
+    return <Coffee size={32} color="#4b5563" />;
+  if (n.includes("lounge") || n.includes("waiting"))
+    return <Armchair size={32} color="#4b5563" />;
+  if (n.includes("parking")) return <Car size={32} color="#4b5563" />;
+  return <Text style={{ fontSize: 32 }}>✨</Text>;
+};
 
 export default function ServiceStationDetailsScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const id = params.id as string;
+
+  const [station, setStation] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadStation();
+  }, [id]);
+
+  const loadStation = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await api.getServiceStationDetails(Number(id));
+      setStation(data);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load service station details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCall = () => {
+    if (station?.operator?.phone) {
+      Linking.openURL(`tel:${station.operator.phone}`);
+    }
+  };
+
+  const handleEmail = () => {
+    if (station?.operator?.email) {
+      Linking.openURL(`mailto:${station.operator.email}`);
+    }
+  };
+
+  const handleMaps = () => {
+    const url = Platform.select({
+      ios: `maps:0,0?q=${station.latitude},${station.longitude}(${station.name})`,
+      android: `geo:0,0?q=${station.latitude},${station.longitude}(${station.name})`,
+    });
+    if (url) Linking.openURL(url);
+    if (url) Linking.openURL(url);
+  };
+
+  const toggleFavorite = async () => {
+    if (!station) return;
+
+    try {
+      const isFav = station.is_favorite;
+      // Optimistic update
+      setStation((prev: any) => ({ ...prev, is_favorite: !isFav }));
+
+      if (isFav) {
+        await api.removeFavorite(station.id);
+      } else {
+        await api.addFavorite(station.id);
+      }
+    } catch (e) {
+      console.error(e);
+      // Revert on error
+      setStation((prev: any) => ({
+        ...prev,
+        is_favorite: !prev.is_favorite,
+      }));
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <ActivityIndicator size="large" color="#f59e0b" />
+      </View>
+    );
+  }
+
+  if (error || !station) {
+    return (
+      <View style={[styles.container, styles.center]}>
+        <Text style={styles.errorText}>{error || "Station not found"}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadStation}>
+          <Text style={styles.retryText}>Retry</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.retryButton,
+            { marginTop: 10, backgroundColor: "#ccc" },
+          ]}
+          onPress={() => router.back()}
+        >
+          <Text style={styles.retryText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  const imageUrl =
+    station.images && station.images.length > 0
+      ? station.images[0]
+      : "https://images.pexels.com/photos/3803518/pexels-photo-3803518.jpeg?auto=compress&cs=tinysrgb&w=1200";
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.imageContainer}>
-        <Image
-          source={{
-            uri: "https://images.pexels.com/photos/3803518/pexels-photo-3803518.jpeg?auto=compress&cs=tinysrgb&w=1200",
-          }}
-          style={styles.image}
-        />
+        <Image source={{ uri: imageUrl }} style={styles.image} />
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
         >
           <ChevronLeft size={24} color="#fff" strokeWidth={2} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.favoriteButton}>
-          <Heart size={24} color="#f59e0b" fill="#f59e0b" strokeWidth={2} />
+        {/* Favorite functionality can be added here if needed, keeping UI for now */}
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={toggleFavorite}
+        >
+          <Heart
+            size={24}
+            color={station.is_favorite ? "#ef4444" : "#f59e0b"}
+            fill={station.is_favorite ? "#ef4444" : "none"}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.titleContainer}>
-            <Text style={styles.stationName}>QuickCharge EV Service</Text>
-            <View style={styles.ratingContainer}>
-              <Star size={18} color="#fbbf24" fill="#fbbf24" strokeWidth={2} />
-              <Text style={styles.rating}>4.5</Text>
-              <Text style={styles.reviews}>(189 reviews)</Text>
-            </View>
+            <Text style={styles.stationName}>{station.name}</Text>
           </View>
-          <Text style={styles.distance}>0.4 mi away</Text>
+          {/* Distance if available */}
+          {station.distance != null && (
+            <Text style={styles.distance}>
+              {station.distance.toFixed(1)} miles away
+            </Text>
+          )}
         </View>
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Contact Information</Text>
-          <TouchableOpacity style={styles.contactItem}>
+          <TouchableOpacity style={styles.contactItem} onPress={handleMaps}>
             <MapPin size={20} color="#f59e0b" strokeWidth={2} />
             <View style={styles.contactContent}>
               <Text style={styles.contactLabel}>Address</Text>
-              <Text style={styles.contactValue}>
-                777 Mission Street, San Francisco
-              </Text>
+              <Text style={styles.contactValue}>{station.address}</Text>
             </View>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.contactItem}>
-            <Phone size={20} color="#f59e0b" strokeWidth={2} />
-            <View style={styles.contactContent}>
-              <Text style={styles.contactLabel}>Phone</Text>
-              <Text style={styles.contactValue}>+1-415-xxx-xxxx</Text>
-            </View>
-          </TouchableOpacity>
+          {station.operator?.phone && (
+            <TouchableOpacity style={styles.contactItem} onPress={handleCall}>
+              <Phone size={20} color="#f59e0b" strokeWidth={2} />
+              <View style={styles.contactContent}>
+                <Text style={styles.contactLabel}>Phone</Text>
+                <Text style={styles.contactValue}>
+                  {station.operator.phone}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
 
-          <TouchableOpacity style={styles.contactItem}>
-            <Mail size={20} color="#f59e0b" strokeWidth={2} />
-            <View style={styles.contactContent}>
-              <Text style={styles.contactLabel}>Email</Text>
-              <Text style={styles.contactValue}>service@quickcharge.com</Text>
-            </View>
-          </TouchableOpacity>
+          {station.operator?.email && (
+            <TouchableOpacity style={styles.contactItem} onPress={handleEmail}>
+              <Mail size={20} color="#f59e0b" strokeWidth={2} />
+              <View style={styles.contactContent}>
+                <Text style={styles.contactLabel}>Email</Text>
+                <Text style={styles.contactValue}>
+                  {station.operator.email}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {station.operator?.website && (
+            <TouchableOpacity
+              style={styles.contactItem}
+              onPress={() => Linking.openURL(station.operator.website)}
+            >
+              <Text style={{ fontSize: 20 }}>🌐</Text>
+              <View style={styles.contactContent}>
+                <Text style={styles.contactLabel}>Website</Text>
+                <Text style={styles.contactValue} numberOfLines={1}>
+                  {station.operator.website}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -89,84 +232,44 @@ export default function ServiceStationDetailsScreen() {
           <View style={styles.hoursCard}>
             <Clock size={20} color="#f59e0b" strokeWidth={2} />
             <View style={styles.hoursContent}>
-              <Text style={styles.hoursTitle}>8:00 AM - 8:00 PM</Text>
+              <Text style={styles.hoursTitle}>
+                {station.opening_hours || "Contact for hours"}
+              </Text>
               <Text style={styles.hoursSubtitle}>
-                Daily (including weekends)
+                {station.status === "ACTIVE"
+                  ? "Open"
+                  : station.status || "Unknown"}
               </Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Services Offered</Text>
-          <View style={styles.servicesContainer}>
-            <View style={styles.serviceItem}>
-              <Wrench size={20} color="#f59e0b" strokeWidth={2} />
-              <Text style={styles.serviceText}>Battery Check</Text>
-            </View>
-            <View style={styles.serviceItem}>
-              <Wrench size={20} color="#f59e0b" strokeWidth={2} />
-              <Text style={styles.serviceText}>Software Update</Text>
-            </View>
-            <View style={styles.serviceItem}>
-              <Wrench size={20} color="#f59e0b" strokeWidth={2} />
-              <Text style={styles.serviceText}>Diagnostics</Text>
-            </View>
-            <View style={styles.serviceItem}>
-              <Wrench size={20} color="#f59e0b" strokeWidth={2} />
-              <Text style={styles.serviceText}>Brake Service</Text>
+        {/* Removed Services Offered and Pricing sections as requested */}
+
+        {station.amenities && station.amenities.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Facilities & Amenities</Text>
+            <View style={styles.amenitiesGrid}>
+              {station.amenities.map((amenity: string, index: number) => (
+                <View key={index} style={styles.amenityItem}>
+                  <View style={styles.amenityIconContainer}>
+                    {getAmenityIcon(amenity)}
+                  </View>
+                  <Text style={styles.amenityText}>{amenity}</Text>
+                </View>
+              ))}
             </View>
           </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Facilities & Amenities</Text>
-          <View style={styles.amenitiesGrid}>
-            <View style={styles.amenityItem}>
-              <Text style={styles.amenityIcon}>🛋️</Text>
-              <Text style={styles.amenityText}>Waiting Lounge</Text>
-            </View>
-            <View style={styles.amenityItem}>
-              <Text style={styles.amenityIcon}>📶</Text>
-              <Text style={styles.amenityText}>Free WiFi</Text>
-            </View>
-            <View style={styles.amenityItem}>
-              <Text style={styles.amenityIcon}>☕</Text>
-              <Text style={styles.amenityText}>Refreshments</Text>
-            </View>
-            <View style={styles.amenityItem}>
-              <Text style={styles.amenityIcon}>🚗</Text>
-              <Text style={styles.amenityText}>Parking</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Technician Expertise</Text>
-          <Text style={styles.description}>
-            Our certified EV technicians are experienced in servicing all major
-            electric vehicle brands. We use genuine parts and advanced
-            diagnostic equipment to ensure your vehicle receives the highest
-            quality service. All work comes with a warranty and satisfaction
-            guarantee.
-          </Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Pricing</Text>
-          <View style={styles.priceCard}>
-            <Text style={styles.priceItem}>Basic Diagnostic: $49.99</Text>
-            <Text style={styles.priceItem}>Battery Health Check: $79.99</Text>
-            <Text style={styles.priceItem}>Software Update: $99.99</Text>
-            <Text style={styles.priceItem}>Complete Service: $199.99+</Text>
-          </View>
-        </View>
+        )}
 
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.bookButton}>
-            <Text style={styles.bookButtonText}>Book Service Now</Text>
+          <TouchableOpacity style={styles.bookButton} onPress={handleCall}>
+            <Text style={styles.bookButtonText}>Book Service</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.directionsButton}>
+          <TouchableOpacity
+            style={styles.directionsButton}
+            onPress={handleMaps}
+          >
             <MapPin size={20} color="#f59e0b" strokeWidth={2} />
             <Text style={styles.directionsButtonText}>Get Directions</Text>
           </TouchableOpacity>
@@ -180,6 +283,25 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  center: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#ef4444",
+    marginBottom: 16,
+  },
+  retryButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: "#f59e0b",
+    borderRadius: 8,
+  },
+  retryText: {
+    color: "#fff",
+    fontWeight: "600",
   },
   imageContainer: {
     position: "relative",
@@ -219,20 +341,6 @@ const styles = StyleSheet.create({
     color: "#111",
     marginBottom: 8,
   },
-  ratingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  rating: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#111",
-  },
-  reviews: {
-    fontSize: 16,
-    color: "#6b7280",
-  },
   distance: {
     fontSize: 14,
     color: "#f59e0b",
@@ -249,7 +357,7 @@ const styles = StyleSheet.create({
   },
   contactItem: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center", // Changed to center for better alignment with icons
     gap: 12,
     paddingVertical: 12,
     paddingHorizontal: 12,
@@ -292,25 +400,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: "#6b7280",
   },
-  servicesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  serviceItem: {
-    width: "48%",
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#fffbeb",
-    borderRadius: 12,
-    padding: 12,
-  },
-  serviceText: {
-    fontSize: 13,
-    fontWeight: "500",
-    color: "#111",
-  },
   amenitiesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -323,8 +412,7 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: "center",
   },
-  amenityIcon: {
-    fontSize: 32,
+  amenityIconContainer: {
     marginBottom: 8,
   },
   amenityText: {
@@ -332,22 +420,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     color: "#111",
     textAlign: "center",
-  },
-  description: {
-    fontSize: 14,
-    color: "#6b7280",
-    lineHeight: 22,
-  },
-  priceCard: {
-    backgroundColor: "#f9fafb",
-    borderRadius: 12,
-    padding: 16,
-    gap: 8,
-  },
-  priceItem: {
-    fontSize: 14,
-    fontWeight: "500",
-    color: "#111",
   },
   actions: {
     flexDirection: "row",

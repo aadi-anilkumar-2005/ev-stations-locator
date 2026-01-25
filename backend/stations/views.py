@@ -9,7 +9,8 @@ from math import sin, cos, asin, sqrt, radians
 
 from .models import Place, Favorite, PlaceCharger, ChargerType, Amenity
 from .serializers import (
-    PlaceSerializer, FavoriteSerializer, ShowroomDetailSerializer
+    PlaceSerializer, FavoriteSerializer, ShowroomDetailSerializer,
+    ServiceStationDetailSerializer
 )
 
 def haversine(lon1, lat1, lon2, lat2):
@@ -291,4 +292,10 @@ class FavoriteViewSet(viewsets.ModelViewSet):
 class ShowroomDetailView(generics.RetrieveAPIView):
     queryset = Place.objects.all()
     serializer_class = ShowroomDetailSerializer
+    permission_classes = [AllowAny]
+
+
+class ServiceStationDetailView(generics.RetrieveAPIView):
+    queryset = Place.objects.filter(place_type='SERVICE')
+    serializer_class = ServiceStationDetailSerializer
     permission_classes = [AllowAny]

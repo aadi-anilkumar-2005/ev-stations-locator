@@ -131,3 +131,40 @@ class ShowroomDetailSerializer(serializers.ModelSerializer):
             return request.user.favorites.filter(place=obj).exists()
         return False
 
+
+class ServiceStationDetailSerializer(serializers.ModelSerializer):
+    operator = serializers.SerializerMethodField()
+    amenities = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
+    distance = serializers.FloatField(read_only=True, required=False)
+    is_favorite = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Place
+        fields = [
+            'id', 'name', 'place_type', 'address', 'latitude', 'longitude',
+            'opening_hours', 'status', 'operator', 'amenities', 'images', 
+            'distance', 'is_favorite'
+        ]
+
+    def get_operator(self, obj):
+        if obj.operator:
+            return {
+                'name': obj.operator.name,
+                'phone': obj.operator.contact_phone,
+                'email': obj.operator.contact_email,
+                'website': obj.operator.website
+            }
+        return None
+
+    def get_amenities(self, obj):
+        return list(obj.amenities.values_list('name', flat=True))
+
+    def get_images(self, obj):
+        return list(obj.images.values_list('image_url', flat=True))
+
+    def get_is_favorite(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return request.user.favorites.filter(place=obj).exists()
+        return False

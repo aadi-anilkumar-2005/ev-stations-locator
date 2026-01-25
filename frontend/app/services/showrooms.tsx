@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
   distance: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#10b981",
+    color: "#3b82f6",
   },
   cardDetails: {
     gap: 6,

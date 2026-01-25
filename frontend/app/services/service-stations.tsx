@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,68 +7,57 @@ import {
   ScrollView,
   Image,
   TextInput,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
   ChevronLeft,
   MapPin,
   Phone,
-  Star,
   Search,
   List,
   Clock,
+  Wrench,
 } from "lucide-react-native";
-
-const MOCK_STATIONS = [
-  {
-    id: 1,
-    name: "QuickCharge EV Service",
-    address: "777 Mission Street",
-    distance: "0.4 mi",
-    phone: "+1-415-xxx-xxxx",
-    rating: 4.5,
-    reviews: 189,
-    services: [
-      "Battery Check",
-      "Software Update",
-      "Diagnostics",
-      "Brake Service",
-    ],
-    hours: "8:00 AM - 8:00 PM",
-    image:
-      "https://images.pexels.com/photos/3803518/pexels-photo-3803518.jpeg?auto=compress&cs=tinysrgb&w=400",
-  },
-  {
-    id: 2,
-    name: "EV Care Pro",
-    address: "444 Battery Street",
-    distance: "0.7 mi",
-    phone: "+1-415-xxx-xxxx",
-    rating: 4.4,
-    reviews: 156,
-    services: ["Maintenance", "Repair", "Inspection", "Warranty Service"],
-    hours: "7:30 AM - 7:30 PM",
-    image:
-      "https://images.pexels.com/photos/3803518/pexels-photo-3803518.jpeg?auto=compress&cs=tinysrgb&w=400",
-  },
-  {
-    id: 3,
-    name: "ElectroMotion Garage",
-    address: "222 Folsom Street",
-    distance: "1.1 mi",
-    phone: "+1-415-xxx-xxxx",
-    rating: 4.3,
-    reviews: 142,
-    services: ["Tire Service", "Alignment", "Suspension", "Electrical Repair"],
-    hours: "8:30 AM - 6:30 PM",
-    image:
-      "https://images.pexels.com/photos/3803518/pexels-photo-3803518.jpeg?auto=compress&cs=tinysrgb&w=400",
-  },
-];
+import { api } from "@/services/api";
+import { useAuth } from "@/context/AuthContext";
+import { calculateDistance } from "@/utils/distance";
 
 export default function ServiceStationsScreen() {
   const router = useRouter();
+  const { location } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
+  const [stations, setStations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchStations();
+  }, [location]);
+
+  const fetchStations = async () => {
+    setLoading(true);
+    try {
+      let data = [];
+      if (location) {
+        data = await api.getNearbyPlaces(location.latitude, location.longitude);
+      } else {
+        data = await api.getNearbyPlaces(37.77, -122.41);
+      }
+      // Filter for Service Stations
+      const serviceStations = data.filter(
+        (s: any) => s.place_type === "SERVICE",
+      );
+      setStations(serviceStations);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredStations = stations.filter((station) =>
+    station.name.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   return (
     <View style={styles.container}>
@@ -98,78 +87,100 @@ export default function ServiceStationsScreen() {
       <View style={styles.listContainer}>
         <View style={styles.listHeader}>
           <Text style={styles.listTitle}>Nearby Service Centers</Text>
-          <Text style={styles.resultCount}>{MOCK_STATIONS.length} results</Text>
+          <Text style={styles.resultCount}>
+            {filteredStations.length} results
+          </Text>
         </View>
 
-        <ScrollView
-          style={styles.stationList}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.listContent}
-        >
-          {MOCK_STATIONS.map((station) => (
-            <TouchableOpacity
-              key={station.id}
-              style={styles.stationCard}
-              onPress={() =>
-                router.push(`/service-station-details?id=${station.id}`)
-              }
-            >
-              <Image
-                source={{ uri: station.image }}
-                style={styles.stationImage}
-              />
-              <View style={styles.cardContent}>
-                <View style={styles.cardHeader}>
-                  <View style={styles.cardTitle}>
-                    <Text style={styles.stationName}>{station.name}</Text>
-                    <View style={styles.ratingContainer}>
-                      <Star
-                        size={16}
-                        color="#fbbf24"
-                        fill="#fbbf24"
-                        strokeWidth={2}
-                      />
-                      <Text style={styles.rating}>{station.rating}</Text>
-                      <Text style={styles.reviews}>({station.reviews})</Text>
+        {loading ? (
+          <View style={{ flex: 1, justifyContent: "center" }}>
+            <ActivityIndicator size="large" color="#f59e0b" />
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.stationList}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContent}
+          >
+            {filteredStations.map((station) => (
+              <TouchableOpacity
+                key={station.id}
+                style={styles.stationCard}
+                onPress={() =>
+                  router.push(`/service-station-details?id=${station.id}`)
+                }
+              >
+                <Image
+                  source={{
+                    uri:
+                      station.images && station.images.length > 0
+                        ? station.images[0]
+                        : "https://images.pexels.com/photos/3803518/pexels-photo-3803518.jpeg?auto=compress&cs=tinysrgb&w=400",
+                  }}
+                  style={styles.stationImage}
+                />
+                <View style={styles.cardContent}>
+                  <View style={styles.cardHeader}>
+                    <View style={styles.cardTitle}>
+                      <Text style={styles.stationName}>{station.name}</Text>
+                      <View
+                        style={{
+                          flexDirection: "row",
+                          alignItems: "center",
+                          gap: 4,
+                          marginTop: 4,
+                        }}
+                      >
+                        <Wrench size={14} color="#f59e0b" />
+                        <Text style={{ fontSize: 13, color: "#6b7280" }}>
+                          Service Center
+                        </Text>
+                      </View>
                     </View>
+                    <Text style={styles.distance}>
+                      {station.distance != null
+                        ? station.distance.toFixed(1) + " mi"
+                        : location
+                          ? calculateDistance(
+                              location.latitude,
+                              location.longitude,
+                              station.latitude,
+                              station.longitude,
+                            ).toFixed(1) + " mi"
+                          : ""}
+                    </Text>
                   </View>
-                  <Text style={styles.distance}>{station.distance}</Text>
-                </View>
 
-                <View style={styles.cardDetails}>
-                  <View style={styles.detailRow}>
-                    <MapPin size={16} color="#6b7280" strokeWidth={2} />
-                    <Text style={styles.detailText}>{station.address}</Text>
-                  </View>
-                  <View style={styles.detailRow}>
-                    <Phone size={16} color="#6b7280" strokeWidth={2} />
-                    <Text style={styles.detailText}>{station.phone}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.servicesContainer}>
-                  {station.services.slice(0, 3).map((service, idx) => (
-                    <View key={idx} style={styles.serviceTag}>
-                      <Text style={styles.serviceText}>{service}</Text>
-                    </View>
-                  ))}
-                  {station.services.length > 3 && (
-                    <View style={styles.serviceTag}>
-                      <Text style={styles.serviceText}>
-                        +{station.services.length - 3} more
+                  <View style={styles.cardDetails}>
+                    <View style={styles.detailRow}>
+                      <MapPin size={16} color="#6b7280" strokeWidth={2} />
+                      <Text style={styles.detailText} numberOfLines={1}>
+                        {station.address}
                       </Text>
                     </View>
-                  )}
-                </View>
+                    {station.operator ? (
+                      <View style={styles.detailRow}>
+                        <Text style={[styles.detailText, { color: "#f59e0b" }]}>
+                          {station.operator}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </View>
 
-                <View style={styles.hoursRow}>
-                  <Clock size={14} color="#9ca3af" strokeWidth={2} />
-                  <Text style={styles.hours}>{station.hours}</Text>
+                  {/* Removed Services list and Rating as per request to remove mocked data */}
+
+                  <View style={styles.hoursRow}>
+                    <Clock size={14} color="#9ca3af" strokeWidth={2} />
+                    <Text style={styles.hours}>
+                      {station.opening_hours ||
+                        (station.status === "ACTIVE" ? "Open" : station.status)}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
       </View>
     </View>
   );

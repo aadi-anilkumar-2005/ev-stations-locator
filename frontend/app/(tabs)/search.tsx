@@ -16,6 +16,7 @@ import {
   Zap,
   SlidersHorizontal,
   ShoppingBag,
+  Wrench,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "@/services/api";
@@ -102,13 +103,17 @@ export default function SearchScreen() {
                       pathname:
                         station.place_type === "SHOWROOM"
                           ? "/showroom-details"
-                          : "/details",
+                          : station.place_type === "SERVICE"
+                            ? "/service-station-details"
+                            : "/details",
                       params: { id: station.id },
                     })
                   }
                 >
                   {station.place_type === "SHOWROOM" ? (
                     <ShoppingBag size={20} color="#3b82f6" strokeWidth={2} />
+                  ) : station.place_type === "SERVICE" ? (
+                    <Wrench size={20} color="#f59e0b" strokeWidth={2} />
                   ) : (
                     <Zap size={20} color="#10b981" strokeWidth={2} />
                   )}
@@ -124,6 +129,9 @@ export default function SearchScreen() {
                         station.place_type === "SHOWROOM" && {
                           color: "#3b82f6",
                         },
+                        station.place_type === "SERVICE" && {
+                          color: "#f59e0b",
+                        },
                       ]}
                     >
                       {station.operator}
@@ -132,11 +140,6 @@ export default function SearchScreen() {
                       {station.address}
                     </Text>
                   </View>
-                  <Text style={{ fontSize: 12, color: "#10b981" }}>
-                    {station.distance
-                      ? station.distance.toFixed(1) + " km"
-                      : ""}
-                  </Text>
                 </TouchableOpacity>
               ))}
             </View>

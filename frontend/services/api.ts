@@ -124,6 +124,19 @@ export const api = {
     return response.json();
   },
 
+  getServiceStationDetails: async (id: number) => {
+    const headers = await getHeaders();
+    let response = await fetch(`${API_BASE_URL}/service-stations/${id}/`, { headers });
+    
+    // If unauthorized (stale token), retry without headers
+    if (response.status === 401) {
+       response = await fetch(`${API_BASE_URL}/service-stations/${id}/`);
+    }
+
+    if (!response.ok) throw new Error('Failed to load service station details');
+    return response.json();
+  },
+
   getPlaceDetails: async (id: number) => {
     const headers = await getHeaders(); 
     let response = await fetch(`${API_BASE_URL}/places/${id}/`, { headers });

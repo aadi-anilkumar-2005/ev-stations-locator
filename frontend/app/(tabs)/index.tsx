@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { WebView } from "react-native-webview";
-import { MapPin, List, Zap, ShoppingBag } from "lucide-react-native";
+import { MapPin, List, Zap, ShoppingBag, Wrench } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
@@ -168,6 +168,15 @@ export default function HomeScreen() {
         shadowSize: [41, 41]
       });
 
+      const serviceIcon = L.icon({
+        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-gold.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+
       const userIcon = L.divIcon({
           className: 'user-marker',
           html: '<div style="background-color: #3b82f6; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.3);"></div>',
@@ -180,7 +189,10 @@ export default function HomeScreen() {
         markers = [];
 
         stations.forEach(station => {
-          const icon = station.place_type === 'SHOWROOM' ? showroomIcon : stationIcon;
+          let icon = stationIcon;
+          if (station.place_type === 'SHOWROOM') icon = showroomIcon;
+          if (station.place_type === 'SERVICE') icon = serviceIcon;
+          
           const marker = L.marker([station.latitude, station.longitude], { icon: icon })
             .addTo(map)
             .on('click', () => {
@@ -242,6 +254,11 @@ export default function HomeScreen() {
         if (data.place_type === "SHOWROOM") {
           router.push({
             pathname: "/showroom-details",
+            params: { id: data.id },
+          });
+        } else if (data.place_type === "SERVICE") {
+          router.push({
+            pathname: "/service-station-details",
             params: { id: data.id },
           });
         } else {
@@ -342,7 +359,9 @@ export default function HomeScreen() {
                   pathname:
                     station.place_type === "SHOWROOM"
                       ? "/showroom-details"
-                      : "/details",
+                      : station.place_type === "SERVICE"
+                        ? "/service-station-details"
+                        : "/details",
                   params: { id: station.id },
                 })
               }
@@ -350,6 +369,8 @@ export default function HomeScreen() {
               <View style={styles.stationIcon}>
                 {station.place_type === "SHOWROOM" ? (
                   <ShoppingBag size={24} color="#3b82f6" strokeWidth={2} />
+                ) : station.place_type === "SERVICE" ? (
+                  <Wrench size={24} color="#f59e0b" strokeWidth={2} />
                 ) : (
                   <Zap size={24} color="#10b981" strokeWidth={2} />
                 )}
@@ -360,6 +381,7 @@ export default function HomeScreen() {
                   style={[
                     styles.stationOperator,
                     station.place_type === "SHOWROOM" && { color: "#3b82f6" },
+                    station.place_type === "SERVICE" && { color: "#f59e0b" },
                   ]}
                 >
                   {station.operator}
@@ -378,18 +400,32 @@ export default function HomeScreen() {
                     station.status !== "ACTIVE" && {
                       backgroundColor: "#fee2e2",
                     },
+                    station.place_type === "SHOWROOM" && {
+                      backgroundColor: "#eff6ff",
+                    },
+                    station.place_type === "SERVICE" && {
+                      backgroundColor: "#fffbeb",
+                    },
                   ]}
                 >
                   <Text
                     style={[
                       styles.availableBadgeText,
                       station.status !== "ACTIVE" && { color: "#ef4444" },
+                      station.place_type === "SHOWROOM" && { color: "#3b82f6" },
+                      station.place_type === "SERVICE" && { color: "#f59e0b" },
                     ]}
                   >
                     {station.status === "ACTIVE" ? "Available" : "Busy"}
                   </Text>
                 </View>
-                <Text style={styles.stationPrice}>{station.price}</Text>
+                <Text style={styles.stationPrice}>
+                  {station.place_type === "SHOWROOM"
+                    ? "Showroom"
+                    : station.place_type === "SERVICE"
+                      ? "Service Center"
+                      : station.price}
+                </Text>
               </View>
             </TouchableOpacity>
           ))}

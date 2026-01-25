@@ -9,7 +9,7 @@ import {
   RefreshControl,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
-import { Heart, Zap, MapPin, ShoppingBag } from "lucide-react-native";
+import { Heart, Zap, MapPin, ShoppingBag, Wrench } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
@@ -113,7 +113,9 @@ export default function FavoritesScreen() {
                   pathname:
                     place.place_type === "SHOWROOM"
                       ? "/showroom-details"
-                      : "/details",
+                      : place.place_type === "SERVICE"
+                        ? "/service-station-details"
+                        : "/details",
                   params: { id: place.id },
                 })
               }
@@ -122,6 +124,8 @@ export default function FavoritesScreen() {
                 <View style={styles.stationIcon}>
                   {place.place_type === "SHOWROOM" ? (
                     <ShoppingBag size={24} color="#3b82f6" strokeWidth={2} />
+                  ) : place.place_type === "SERVICE" ? (
+                    <Wrench size={24} color="#f59e0b" strokeWidth={2} />
                   ) : (
                     <Zap size={24} color="#10b981" strokeWidth={2} />
                   )}
@@ -132,6 +136,7 @@ export default function FavoritesScreen() {
                     style={[
                       styles.stationOperator,
                       place.place_type === "SHOWROOM" && { color: "#3b82f6" },
+                      place.place_type === "SERVICE" && { color: "#f59e0b" },
                     ]}
                   >
                     {place.operator}
@@ -178,6 +183,9 @@ export default function FavoritesScreen() {
                     place.place_type === "SHOWROOM" && {
                       backgroundColor: "#eff6ff",
                     },
+                    place.place_type === "SERVICE" && {
+                      backgroundColor: "#fffbeb",
+                    },
                   ]}
                 >
                   <Text
@@ -185,6 +193,7 @@ export default function FavoritesScreen() {
                       styles.availableBadgeText,
                       place.status !== "ACTIVE" && { color: "#ef4444" },
                       place.place_type === "SHOWROOM" && { color: "#3b82f6" },
+                      place.place_type === "SERVICE" && { color: "#f59e0b" },
                     ]}
                   >
                     {place.available_count
@@ -194,7 +203,13 @@ export default function FavoritesScreen() {
                         : "Busy"}
                   </Text>
                 </View>
-                <Text style={styles.stationPrice}>{place.price}</Text>
+                <Text style={styles.stationPrice}>
+                  {place.place_type === "SHOWROOM"
+                    ? "Showroom"
+                    : place.place_type === "SERVICE"
+                      ? "Service Center"
+                      : place.price}
+                </Text>
               </View>
             </TouchableOpacity>
           );

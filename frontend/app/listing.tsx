@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ChevronLeft, Map, Heart, MapPin } from "lucide-react-native";
+import { ChevronLeft, Map, MapPin } from "lucide-react-native";
 import { api } from "@/services/api";
 import { useAuth } from "@/context/AuthContext";
 import { calculateDistance } from "@/utils/distance";
@@ -114,7 +114,9 @@ export default function ListingScreen() {
                 pathname:
                   station.place_type === "SHOWROOM"
                     ? "/showroom-details"
-                    : "/details",
+                    : station.place_type === "SERVICE"
+                      ? "/service-station-details"
+                      : "/details",
                 params: { id: station.id },
               })
             }
@@ -136,20 +138,13 @@ export default function ListingScreen() {
                     style={[
                       styles.stationOperator,
                       station.place_type === "SHOWROOM" && { color: "#3b82f6" },
+                      station.place_type === "SERVICE" && { color: "#f59e0b" },
                     ]}
                   >
                     {station.operator}
                   </Text>
                   <Text style={styles.stationAddress}>{station.address}</Text>
                 </View>
-                <TouchableOpacity>
-                  <Heart
-                    size={24}
-                    color={station.is_favorite ? "#ef4444" : "#9ca3af"}
-                    fill={station.is_favorite ? "#ef4444" : "none"}
-                    strokeWidth={2}
-                  />
-                </TouchableOpacity>
               </View>
 
               <View style={styles.stationBadges}>
@@ -159,6 +154,7 @@ export default function ListingScreen() {
                     station.status === "OFFLINE" && styles.unavailableBadge,
                     station.status === "BUSY" && styles.limitedBadge,
                     station.place_type === "SHOWROOM" && styles.showroomBadge,
+                    station.place_type === "SERVICE" && styles.serviceBadge,
                   ]}
                 >
                   <Text
@@ -167,6 +163,7 @@ export default function ListingScreen() {
                       station.status === "OFFLINE" && styles.unavailableText,
                       station.status === "BUSY" && styles.limitedText,
                       station.place_type === "SHOWROOM" && styles.showroomText,
+                      station.place_type === "SERVICE" && styles.serviceText,
                     ]}
                   >
                     {station.status}
@@ -196,7 +193,13 @@ export default function ListingScreen() {
                         : "N/A"}
                   </Text>
                 </View>
-                <Text style={styles.priceText}>{station.price}</Text>
+                <Text style={styles.priceText}>
+                  {station.place_type === "SHOWROOM"
+                    ? "Showroom"
+                    : station.place_type === "SERVICE"
+                      ? "Service Center"
+                      : station.price}
+                </Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -361,6 +364,12 @@ const styles = StyleSheet.create({
   },
   showroomText: {
     color: "#3b82f6",
+  },
+  serviceBadge: {
+    backgroundColor: "#fffbeb",
+  },
+  serviceText: {
+    color: "#f59e0b",
   },
   stationFooter: {
     flexDirection: "row",
