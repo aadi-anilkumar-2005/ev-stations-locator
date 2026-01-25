@@ -1,12 +1,16 @@
+import React from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { Store, Wrench, Zap } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Store, Wrench, ArrowLeft } from "lucide-react-native";
 
 export default function ServicesScreen() {
   const router = useRouter();
@@ -35,100 +39,116 @@ export default function ServicesScreen() {
   ];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <Text style={styles.title}>EV Services</Text>
-        <Text style={styles.subtitle}>
+    <View style={styles.container}>
+      <LinearGradient colors={["#10b981", "#059669"]} style={styles.header}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.headerContent}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backBtn}
+            >
+              <ArrowLeft size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>EV Services</Text>
+            <View style={{ width: 40 }} />
+          </View>
+        </SafeAreaView>
+      </LinearGradient>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.pageSubtitle}>
           Find everything for your electric vehicle
         </Text>
-      </View>
 
-      <View style={styles.servicesGrid}>
-        {services.map((service) => (
-          <TouchableOpacity
-            key={service.id}
-            style={styles.serviceCard}
-            onPress={() => {
-              if (service.id === "showrooms")
-                router.push("/services/showrooms");
-              else if (service.id === "service")
-                router.push("/services/service-stations");
-            }}
-          >
-            <View
-              style={[
-                styles.iconContainer,
-                { backgroundColor: service.bgColor },
-              ]}
+        <View style={styles.servicesGrid}>
+          {services.map((service) => (
+            <TouchableOpacity
+              key={service.id}
+              style={styles.serviceCard}
+              onPress={() => {
+                if (service.id === "showrooms")
+                  router.push("/services/showrooms");
+                else if (service.id === "service")
+                  router.push("/services/service-stations");
+              }}
             >
-              <service.icon size={40} color={service.color} strokeWidth={2} />
+              <View
+                style={[
+                  styles.iconContainer,
+                  { backgroundColor: service.bgColor },
+                ]}
+              >
+                <service.icon size={40} color={service.color} strokeWidth={2} />
+              </View>
+              <Text style={styles.serviceTitle}>{service.title}</Text>
+              <Text style={styles.serviceSubtitle}>{service.subtitle}</Text>
+              <Text style={styles.serviceDescription}>
+                {service.description}
+              </Text>
+              <View style={styles.cardFooter}>
+                <Text style={styles.countBadge}>{service.count}</Text>
+                <Text style={styles.arrow}>→</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={styles.quickAccessSection}>
+          <Text style={styles.sectionTitle}>Quick Access</Text>
+          <TouchableOpacity
+            style={styles.quickAccessCard}
+            onPress={() => router.push("/services/showrooms")}
+          >
+            <View style={styles.quickAccessIcon}>
+              <Store size={24} color="#3b82f6" strokeWidth={2} />
             </View>
-            <Text style={styles.serviceTitle}>{service.title}</Text>
-            <Text style={styles.serviceSubtitle}>{service.subtitle}</Text>
-            <Text style={styles.serviceDescription}>{service.description}</Text>
-            <View style={styles.cardFooter}>
-              <Text style={styles.countBadge}>{service.count}</Text>
-              <Text style={styles.arrow}>→</Text>
+            <View style={styles.quickAccessContent}>
+              <Text style={styles.quickAccessTitle}>Latest EV Models</Text>
+              <Text style={styles.quickAccessSubtitle}>
+                Explore 2024-2025 models at showrooms
+              </Text>
             </View>
           </TouchableOpacity>
-        ))}
-      </View>
 
-      <View style={styles.quickAccessSection}>
-        <Text style={styles.sectionTitle}>Quick Access</Text>
-        <TouchableOpacity
-          style={styles.quickAccessCard}
-          onPress={() => router.push("/services/showrooms")}
-        >
-          <View style={styles.quickAccessIcon}>
-            <Store size={24} color="#3b82f6" strokeWidth={2} />
-          </View>
-          <View style={styles.quickAccessContent}>
-            <Text style={styles.quickAccessTitle}>Latest EV Models</Text>
-            <Text style={styles.quickAccessSubtitle}>
-              Explore 2024-2025 models at showrooms
-            </Text>
-          </View>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.quickAccessCard}
+            onPress={() => router.push("/services/service-stations")}
+          >
+            <View style={styles.quickAccessIcon}>
+              <Wrench size={24} color="#f59e0b" strokeWidth={2} />
+            </View>
+            <View style={styles.quickAccessContent}>
+              <Text style={styles.quickAccessTitle}>Regular Maintenance</Text>
+              <Text style={styles.quickAccessSubtitle}>
+                Schedule your EV check-up today
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
-        <TouchableOpacity
-          style={styles.quickAccessCard}
-          onPress={() => router.push("/services/service-stations")}
-        >
-          <View style={styles.quickAccessIcon}>
-            <Wrench size={24} color="#f59e0b" strokeWidth={2} />
-          </View>
-          <View style={styles.quickAccessContent}>
-            <Text style={styles.quickAccessTitle}>Regular Maintenance</Text>
-            <Text style={styles.quickAccessSubtitle}>
-              Schedule your EV check-up today
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.infoSection}>
-        <Text style={styles.sectionTitle}>Why Choose Our Services?</Text>
-        <View style={styles.infoCard}>
-          <View style={styles.infoBullet}>
-            <Text style={styles.bulletNumber}>✓</Text>
-            <Text style={styles.bulletText}>Certified EV Specialists</Text>
-          </View>
-          <View style={styles.infoBullet}>
-            <Text style={styles.bulletNumber}>✓</Text>
-            <Text style={styles.bulletText}>Genuine Parts & Warranty</Text>
-          </View>
-          <View style={styles.infoBullet}>
-            <Text style={styles.bulletNumber}>✓</Text>
-            <Text style={styles.bulletText}>Fast & Reliable Service</Text>
-          </View>
-          <View style={styles.infoBullet}>
-            <Text style={styles.bulletNumber}>✓</Text>
-            <Text style={styles.bulletText}>Competitive Pricing</Text>
+        <View style={styles.infoSection}>
+          <Text style={styles.sectionTitle}>Why Choose Our Services?</Text>
+          <View style={styles.infoCard}>
+            <View style={styles.infoBullet}>
+              <Text style={styles.bulletNumber}>✓</Text>
+              <Text style={styles.bulletText}>Certified EV Specialists</Text>
+            </View>
+            <View style={styles.infoBullet}>
+              <Text style={styles.bulletNumber}>✓</Text>
+              <Text style={styles.bulletText}>Genuine Parts & Warranty</Text>
+            </View>
+            <View style={styles.infoBullet}>
+              <Text style={styles.bulletNumber}>✓</Text>
+              <Text style={styles.bulletText}>Fast & Reliable Service</Text>
+            </View>
+            <View style={styles.infoBullet}>
+              <Text style={styles.bulletNumber}>✓</Text>
+              <Text style={styles.bulletText}>Competitive Pricing</Text>
+            </View>
           </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
@@ -138,19 +158,32 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
   },
   header: {
-    backgroundColor: "#fff",
-    padding: 24,
-    paddingTop: 60,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "#111",
-    marginBottom: 8,
+  safeArea: { paddingTop: Platform.OS === "android" ? 40 : 0 },
+  headerContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
   },
-  subtitle: {
+  headerTitle: { fontSize: 20, fontWeight: "bold", color: "#fff" },
+  backBtn: {
+    padding: 8,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 12,
+  },
+  content: {
+    flex: 1,
+  },
+  pageSubtitle: {
     fontSize: 16,
     color: "#6b7280",
+    paddingHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 10,
   },
   servicesGrid: {
     flexDirection: "row",

@@ -43,6 +43,10 @@ function RootLayoutNav() {
       <Stack.Screen name="details" />
       <Stack.Screen name="navigation" />
       <Stack.Screen name="services" />
+      <Stack.Screen name="HelpSupport" />
+      <Stack.Screen name="settings" />
+      <Stack.Screen name="EditProfile" />
+      <Stack.Screen name="notification-settings" />
       <Stack.Screen name="+not-found" />
     </Stack>
   );
