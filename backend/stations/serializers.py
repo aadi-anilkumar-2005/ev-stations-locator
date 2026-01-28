@@ -39,7 +39,7 @@ class StationSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
     def get_amenities(self, obj):
-        return list(obj.stationamenity_set.values_list('amenity__name', flat=True))
+        return list(obj.station_amenities.values_list('amenity__name', flat=True))
 
 class BrandSerializer(serializers.ModelSerializer):
     class Meta:
@@ -55,7 +55,9 @@ class ShowroomAmenitySerializer(serializers.ModelSerializer):
 
 class ShowroomSerializer(serializers.ModelSerializer):
     brand_name = serializers.ReadOnlyField(source='brand.name')
+    operator = serializers.ReadOnlyField(source='brand.name')
     amenities = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
     
     class Meta:
         model = Showroom
@@ -63,6 +65,9 @@ class ShowroomSerializer(serializers.ModelSerializer):
         
     def get_amenities(self, obj):
         return list(obj.showroom_amenities.values_list('amenity__name', flat=True))
+
+    def get_address(self, obj):
+        return f"{obj.street_address or ''} {obj.city or ''}".strip()
 
 class ServiceAmenitySerializer(serializers.ModelSerializer):
     amenity_name = serializers.ReadOnlyField(source='amenity.name')
@@ -73,6 +78,10 @@ class ServiceAmenitySerializer(serializers.ModelSerializer):
 
 class ServiceCenterSerializer(serializers.ModelSerializer):
     amenities = serializers.SerializerMethodField()
+    address = serializers.SerializerMethodField()
+    # Frontend expects specific flattened contact fields which are already in model (phone, email, website)
+    # But it also expects 'operator' string and 'address'
+    operator = serializers.SerializerMethodField()
 
     class Meta:
         model = ServiceCenter
@@ -81,14 +90,22 @@ class ServiceCenterSerializer(serializers.ModelSerializer):
     def get_amenities(self, obj):
         return list(obj.service_amenities.values_list('amenity__name', flat=True))
 
+    def get_address(self, obj):
+        return f"{obj.street_address or ''} {obj.city or ''}".strip()
+
+    def get_operator(self, obj):
+        return "Service Center"
+
 class MapStationSerializer(serializers.ModelSerializer):
     charger_types = serializers.SerializerMethodField()
     place_type = serializers.CharField(default='CHARGING')
     type = serializers.CharField(default='station')
 
+    id = serializers.IntegerField(source='station_id')
+    
     class Meta:
         model = Station
-        fields = ['station_id', 'name', 'latitude', 'longitude', 'status', 'charger_types', 'place_type', 'type']
+        fields = ['id', 'station_id', 'name', 'latitude', 'longitude', 'status', 'charger_types', 'place_type', 'type']
     
     def get_charger_types(self, obj):
         return list(obj.station_chargers.values_list('charger_type__name', flat=True).distinct())
@@ -97,14 +114,18 @@ class MapShowroomSerializer(serializers.ModelSerializer):
     place_type = serializers.CharField(default='SHOWROOM')
     type = serializers.CharField(default='showroom')
     
+    id = serializers.IntegerField(source='showroom_id')
+
     class Meta:
         model = Showroom
-        fields = ['showroom_id', 'name', 'latitude', 'longitude', 'status', 'place_type', 'type']
+        fields = ['id', 'showroom_id', 'name', 'latitude', 'longitude', 'status', 'place_type', 'type']
 
 class MapServiceCenterSerializer(serializers.ModelSerializer):
     place_type = serializers.CharField(default='SERVICE')
     type = serializers.CharField(default='service_center')
 
+    id = serializers.IntegerField(source='service_id')
+
     class Meta:
         model = ServiceCenter
-        fields = ['service_id', 'name', 'latitude', 'longitude', 'status', 'place_type', 'type']
+        fields = ['id', 'service_id', 'name', 'latitude', 'longitude', 'status', 'place_type', 'type']

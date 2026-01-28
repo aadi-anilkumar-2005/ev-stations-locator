@@ -25,6 +25,7 @@ import {
 import { useState, useEffect } from "react";
 import { api } from "../services/api";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
 
 const getAmenityIcon = (name: string) => {
   const n = name.toLowerCase();
@@ -42,6 +43,7 @@ export default function ServiceStationDetailsScreen() {
   const params = useLocalSearchParams();
   const id = params.id as string;
   const { colors, theme } = useTheme();
+  const { token } = useAuth();
 
   const [station, setStation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -87,6 +89,11 @@ export default function ServiceStationDetailsScreen() {
 
   const toggleFavorite = async () => {
     if (!station) return;
+
+    if (!token) {
+      router.push("/(tabs)/profile");
+      return;
+    }
 
     try {
       const isFav = station.is_favorite;

@@ -240,35 +240,57 @@ export const api = {
 
   addFavorite: async (id: number, type: 'station' | 'showroom' | 'service_center' = 'station') => {
     const token = await AsyncStorage.getItem("auth_token");
-    if (!token) return;
+    if (!token) throw new Error("User not authenticated");
 
     const headers = await getHeaders();
     const body: any = {};
-    if (type === 'station') body.station_id = id;
-    else if (type === 'showroom') body.showroom_id = id;
-    else body.service_id = id;
+    let queryParams = "";
+    
+    if (type === 'station') {
+      body.station_id = id;
+      queryParams = `?station_id=${id}`;
+    } else if (type === 'showroom') {
+      body.showroom_id = id;
+      queryParams = `?showroom_id=${id}`;
+    } else {
+      body.service_id = id;
+      queryParams = `?service_id=${id}`;
+    }
 
-    await fetch(`${API_BASE_URL}/favorites/add/`, {
+    const response = await fetch(`${API_BASE_URL}/favorites/add/${queryParams}`, {
       method: "POST",
       headers,
       body: JSON.stringify(body),
     });
+
+    if (!response.ok) throw new Error("Failed to add favorite");
   },
 
   removeFavorite: async (id: number, type: 'station' | 'showroom' | 'service_center' = 'station') => {
     const token = await AsyncStorage.getItem("auth_token");
-    if (!token) return;
+    if (!token) throw new Error("User not authenticated");
 
     const headers = await getHeaders();
     const body: any = {};
-    if (type === 'station') body.station_id = id;
-    else if (type === 'showroom') body.showroom_id = id;
-    else body.service_id = id;
+    let queryParams = "";
+    
+    if (type === 'station') {
+      body.station_id = id;
+      queryParams = `?station_id=${id}`;
+    } else if (type === 'showroom') {
+      body.showroom_id = id;
+      queryParams = `?showroom_id=${id}`;
+    } else {
+      body.service_id = id;
+      queryParams = `?service_id=${id}`;
+    }
 
-    await fetch(`${API_BASE_URL}/favorites/remove/`, {
+    const response = await fetch(`${API_BASE_URL}/favorites/remove/${queryParams}`, {
       method: "DELETE",
       headers,
       body: JSON.stringify(body),
     });
+
+    if (!response.ok) throw new Error("Failed to remove favorite");
   },
 };

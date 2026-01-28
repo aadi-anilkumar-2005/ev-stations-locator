@@ -130,7 +130,7 @@ export default function SearchScreen() {
                             : "/details",
                       params: {
                         id: station.id,
-                        type: station.type || "place",
+                        type: station.type || "station",
                       },
                     })
                   }

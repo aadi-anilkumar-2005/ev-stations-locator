@@ -22,9 +22,12 @@ export default function FiltersScreen() {
   const [availableChargerTypes, setAvailableChargerTypes] = useState<string[]>(
     [],
   );
-  const [availableAmenities, setAvailableAmenities] = useState<string[]>([]);
+  const [availableAmenities, setAvailableAmenities] = useState<
+    { name: string; category: string }[]
+  >([]);
 
   // Selections
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [selectedChargerTypes, setSelectedChargerTypes] = useState<string[]>(
     [],
   );
@@ -43,9 +46,18 @@ export default function FiltersScreen() {
     try {
       const data = await api.getPlaceOptions();
       setAvailableChargerTypes(data.charger_types || []);
+      // Backend now returns list of { name, category }
       setAvailableAmenities(data.amenities || []);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const toggleType = (type: string) => {
+    if (selectedTypes.includes(type)) {
+      setSelectedTypes(selectedTypes.filter((t) => t !== type));
+    } else {
+      setSelectedTypes([...selectedTypes, type]);
     }
   };
 
@@ -67,6 +79,11 @@ export default function FiltersScreen() {
 
   const applyFilters = () => {
     const params: any = {};
+
+    // 0. Place Type
+    if (selectedTypes.length > 0) {
+      params.type = selectedTypes.join(",");
+    }
 
     // 1. Charger Type
     if (selectedChargerTypes.length > 0) {
@@ -105,6 +122,7 @@ export default function FiltersScreen() {
   };
 
   const resetFilters = () => {
+    setSelectedTypes([]);
     setSelectedChargerTypes([]);
     setSelectedAmenities([]);
     setAvailability("all");
@@ -126,6 +144,51 @@ export default function FiltersScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Place Type */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>
+            Place Type
+          </Text>
+          <View style={styles.optionsList}>
+            {["Charging Station", "Showroom", "Service Center"].map(
+              (type, idx) => {
+                const value =
+                  type === "Charging Station"
+                    ? "station"
+                    : type === "Showroom"
+                      ? "showroom"
+                      : "service_center";
+                const checked = selectedTypes.includes(value);
+                return (
+                  <TouchableOpacity
+                    key={idx}
+                    style={[
+                      styles.checkboxOption,
+                      { borderColor: colors.border },
+                    ]}
+                    onPress={() => toggleType(value)}
+                  >
+                    <View
+                      style={[
+                        styles.checkbox,
+                        { borderColor: colors.border },
+                        checked && styles.checkboxChecked,
+                      ]}
+                    />
+                    <View style={styles.optionText}>
+                      <Text
+                        style={[styles.optionLabel, { color: colors.text }]}
+                      >
+                        {type}
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                );
+              },
+            )}
+          </View>
+        </View>
+
         {/* Charger Types */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -166,41 +229,53 @@ export default function FiltersScreen() {
           </View>
         </View>
 
-        {/* Availability (Removed 24/7) */}
+        {/* Availability */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>
-            Availability
+            Station Status
           </Text>
-          <View style={styles.optionsList}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <TouchableOpacity
-              style={[styles.radioOption, { borderColor: colors.border }]}
+              style={[
+                styles.amenityChip,
+                { borderColor: colors.border },
+                availability === "all" && {
+                  borderColor: "#10b981",
+                  backgroundColor: theme === "dark" ? "#064e3b" : "#ecfdf5",
+                },
+              ]}
               onPress={() => setAvailability("all")}
             >
-              <View
+              <Text
                 style={[
-                  styles.radio,
-                  { borderColor: colors.border },
-                  availability === "all" && styles.radioSelected,
+                  styles.amenityLabel,
+                  { color: colors.text },
+                  availability === "all" && styles.amenityLabelSelected,
                 ]}
-              />
-              <Text style={[styles.optionLabel, { color: colors.text }]}>
+              >
                 All Stations
               </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.radioOption, { borderColor: colors.border }]}
+              style={[
+                styles.amenityChip,
+                { borderColor: colors.border },
+                availability === "available" && {
+                  borderColor: "#10b981",
+                  backgroundColor: theme === "dark" ? "#064e3b" : "#ecfdf5",
+                },
+              ]}
               onPress={() => setAvailability("available")}
             >
-              <View
+              <Text
                 style={[
-                  styles.radio,
-                  { borderColor: colors.border },
-                  availability === "available" && styles.radioSelected,
+                  styles.amenityLabel,
+                  { color: colors.text },
+                  availability === "available" && styles.amenityLabelSelected,
                 ]}
-              />
-              <Text style={[styles.optionLabel, { color: colors.text }]}>
-                Available Now
+              >
+                Available Only
               </Text>
             </TouchableOpacity>
           </View>
@@ -214,13 +289,39 @@ export default function FiltersScreen() {
             </Text>
             <Text style={styles.distanceValue}>{distance} miles</Text>
           </View>
-          <View style={styles.sliderLabels}>
-            <Text style={[styles.sliderLabel, { color: colors.textSecondary }]}>
-              1 mi
-            </Text>
-            <Text style={[styles.sliderLabel, { color: colors.textSecondary }]}>
-              50 mi
-            </Text>
+          <View style={styles.optionsList}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {[1, 5, 10, 20, 50, 100].map((dist) => (
+                <TouchableOpacity
+                  key={dist}
+                  style={[
+                    styles.amenityChip, // Reuse existing chip style
+                    {
+                      borderColor: colors.border,
+                      width: "30%", // approx 3 per row
+                      justifyContent: "center",
+                    },
+                    distance === dist && {
+                      borderColor: "#10b981",
+                      backgroundColor: theme === "dark" ? "#064e3b" : "#ecfdf5",
+                    },
+                  ]}
+                  onPress={() => setDistance(dist)}
+                >
+                  <Text
+                    style={[
+                      { color: colors.text, textAlign: "center" },
+                      distance === dist && {
+                        color: "#10b981",
+                        fontWeight: "500",
+                      },
+                    ]}
+                  >
+                    {dist} mi
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
 
@@ -264,45 +365,87 @@ export default function FiltersScreen() {
             Amenities
           </Text>
           <View style={styles.amenitiesGrid}>
-            {availableAmenities.map((amenity, idx) => {
-              const selected = selectedAmenities.includes(amenity);
-              return (
-                <TouchableOpacity
-                  key={idx}
-                  style={[
-                    styles.amenityChip,
-                    { borderColor: colors.border },
-                    selected && {
-                      borderColor: "#10b981",
-                      backgroundColor: theme === "dark" ? "#064e3b" : "#ecfdf5",
-                    },
-                  ]}
-                  onPress={() => toggleAmenity(amenity)}
+            <View style={styles.amenitiesGrid}>
+              {availableAmenities
+                .filter((item) => {
+                  // Logic:
+                  // 1. If no place type selected -> show only 'general' (or prompt logic, but here generalized).
+                  // Actually, user wants "select option first". So if no type selected, maybe show nothing or just general.
+                  // Let's show 'general' by default so it's not empty.
+                  if (selectedTypes.length === 0)
+                    return item.category === "general";
+
+                  // 2. If 'station' in selectedTypes -> show 'station' + 'general'
+                  // 3. If 'showroom' in selectedTypes -> show 'showroom' + 'general'
+                  // 4. If 'service_center' -> show 'service' + 'general'
+
+                  const isGeneral = item.category === "general";
+                  const isStation =
+                    selectedTypes.includes("station") &&
+                    item.category === "station";
+                  const isShowroom =
+                    selectedTypes.includes("showroom") &&
+                    item.category === "showroom";
+                  const isService =
+                    selectedTypes.includes("service_center") &&
+                    item.category === "service";
+
+                  return isGeneral || isStation || isShowroom || isService;
+                })
+                .map((item, idx) => {
+                  const amenity = item.name;
+                  const selected = selectedAmenities.includes(amenity);
+                  return (
+                    <TouchableOpacity
+                      key={idx}
+                      style={[
+                        styles.amenityChip,
+                        { borderColor: colors.border },
+                        selected && {
+                          borderColor: "#10b981",
+                          backgroundColor:
+                            theme === "dark" ? "#064e3b" : "#ecfdf5",
+                        },
+                      ]}
+                      onPress={() => toggleAmenity(amenity)}
+                    >
+                      <View
+                        style={[
+                          styles.amenityCheckbox,
+                          { borderColor: colors.border },
+                          selected && styles.amenityCheckboxChecked,
+                        ]}
+                      />
+                      <Text
+                        style={[
+                          styles.amenityLabel,
+                          { color: colors.text },
+                          selected && styles.amenityLabelSelected,
+                        ]}
+                      >
+                        {amenity}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              {availableAmenities.length === 0 && (
+                <Text style={{ color: colors.textSecondary }}>
+                  Loading amenities...
+                </Text>
+              )}
+              {availableAmenities.length > 0 && selectedTypes.length === 0 && (
+                <Text
+                  style={{
+                    width: "100%",
+                    color: colors.textSecondary,
+                    fontStyle: "italic",
+                    marginTop: 8,
+                  }}
                 >
-                  <View
-                    style={[
-                      styles.amenityCheckbox,
-                      { borderColor: colors.border },
-                      selected && styles.amenityCheckboxChecked,
-                    ]}
-                  />
-                  <Text
-                    style={[
-                      styles.amenityLabel,
-                      { color: colors.text },
-                      selected && styles.amenityLabelSelected,
-                    ]}
-                  >
-                    {amenity}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-            {availableAmenities.length === 0 && (
-              <Text style={{ color: colors.textSecondary }}>
-                Loading amenities...
-              </Text>
-            )}
+                  Select a Place Type to see more specific amenities.
+                </Text>
+              )}
+            </View>
           </View>
         </View>
       </ScrollView>

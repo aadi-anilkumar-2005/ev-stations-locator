@@ -134,9 +134,9 @@ export default function ListingScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
       >
-        {stations.map((station: any) => (
+        {stations.map((station: any, idx) => (
           <TouchableOpacity
-            key={station.id}
+            key={`${station.type || station.place_type || "place"}-${station.id}-${idx}`}
             style={[
               styles.stationCard,
               { backgroundColor: colors.card },
@@ -150,7 +150,10 @@ export default function ListingScreen() {
                     : station.place_type === "SERVICE"
                       ? "/service-station-details"
                       : "/details",
-                params: { id: station.id },
+                params: {
+                  id: station.id,
+                  type: station.type || "station",
+                },
               })
             }
           >

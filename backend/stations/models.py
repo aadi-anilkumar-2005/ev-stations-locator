@@ -67,7 +67,8 @@ class StationAmenity(models.Model):
     station = models.ForeignKey(
         'Station',
         on_delete=models.CASCADE,
-        db_column='station_id'
+        db_column='station_id',
+        related_name='station_amenities'
     )
     amenity = models.ForeignKey(
         'Amenity',

@@ -2,7 +2,7 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     FavoriteViewSet, StationViewSet, ShowroomViewSet, ServiceCenterViewSet,
-    nearby_places, search_places, place_options,
+    nearby_places, search_places, place_options, filter_places,
     map_home, map_search
 )
 
@@ -15,6 +15,7 @@ router.register(r'service-centers', ServiceCenterViewSet, basename='service-cent
 urlpatterns = [
     # API endpoints matching frontend expectations
     path('places/nearby/', nearby_places, name='place_nearby'),
+    path('places/filter/', filter_places, name='place_filter'),
     path('places/search/', search_places, name='place_search'),
     path('places/options/', place_options, name='place_options'),
     

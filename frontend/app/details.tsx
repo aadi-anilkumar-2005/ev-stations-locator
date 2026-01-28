@@ -31,7 +31,7 @@ export default function DetailsScreen() {
   const router = useRouter();
   const { id, type } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
-  const { location } = useAuth();
+  const { location, token } = useAuth();
   const { colors, theme } = useTheme();
 
   const [station, setStation] = useState<any>(null);
@@ -48,40 +48,45 @@ export default function DetailsScreen() {
     try {
       let data;
       // Check type param to distinguish source
-      if (type === "station") {
+      if (!type || type === "station" || type === "place") {
+        // Handle 'place' as fallback for legacy links
         const stationData = await api.getStationDetails(placeId);
         // Normalize stationData to match component expectations
+        // Calculate price and stats
+        // stationData is now the result of serialize_station from the backend
+
+        // Use provided values or fallback
+        const chargers = stationData.place_chargers || [];
+
+        // Price and power are already calculated by backend logic but we can fallback if needed
+        const priceStr = stationData.price || "N/A";
+        const powerKw =
+          stationData.power_kw !== undefined ? stationData.power_kw : "N/A";
+
         data = {
-          id: stationData.station_id,
+          id: stationData.id || stationData.station_id,
           name: stationData.name,
-          operator: stationData.operator_name,
+          operator: stationData.operator || stationData.operator_name, // Backend sends 'operator'
           address:
+            stationData.address ||
             `${stationData.street_address || ""} ${stationData.city || ""}`.trim(),
           latitude: Number(stationData.latitude),
           longitude: Number(stationData.longitude),
           status: stationData.status,
           opening_hours: stationData.opening_hours,
           amenities: stationData.amenities || [],
-          place_chargers: stationData.station_chargers || [],
-          images: [], // Station model doesn't support images yet
-          price:
-            stationData.station_chargers &&
-            stationData.station_chargers.length > 0
-              ? `$${stationData.station_chargers[0].start_price}/kWh` // Simplified price for now
-              : "N/A",
-          power_kw:
-            stationData.station_chargers &&
-            stationData.station_chargers.length > 0
-              ? Math.max(
-                  ...stationData.station_chargers.map(
-                    (c: any) => c.max_power_kw,
-                  ),
-                )
-              : "N/A",
-          distance: null, // Calculated in component
+          place_chargers: chargers,
+          charger_types: chargers, // Used for count in UI
+          images: [],
+          price: priceStr,
+          power_kw: powerKw,
+          distance: stationData.distance, // Backend might calculate this if passed location
+          is_favorite: stationData.is_favorite,
         };
       } else {
-        data = await api.getPlaceDetails(placeId);
+        // Fallback or error for unknown types
+        console.warn("Unknown place type:", type);
+        throw new Error("Unknown place type");
       }
 
       setStation(data);
@@ -96,16 +101,25 @@ export default function DetailsScreen() {
   };
 
   const toggleFavorite = async () => {
+    if (!token) {
+      router.push("/(tabs)/profile"); // Or appropriate login route
+      // Optional: Alert the user
+      return;
+    }
+
+    // Optimistic update
+    setFavorite((prev) => !prev);
+
     try {
       if (favorite) {
-        await api.removeFavorite(station.id);
-        setFavorite(false);
+        await api.removeFavorite(station.id, "station");
       } else {
-        await api.addFavorite(station.id);
-        setFavorite(true);
+        await api.addFavorite(station.id, "station");
       }
     } catch (e) {
       console.error(e);
+      // Revert on error
+      setFavorite((prev) => !prev);
     }
   };
 
@@ -245,7 +259,7 @@ export default function DetailsScreen() {
         <View style={styles.statsGrid}>
           <View style={[styles.statCard, { backgroundColor: colors.card }]}>
             <Text style={[styles.statValue, { color: colors.text }]}>
-              {station.distance
+              {station.distance != null
                 ? station.distance.toFixed(1)
                 : location
                   ? calculateDistance(

@@ -22,6 +22,7 @@ import {
 } from "lucide-react-native";
 import { api } from "../services/api";
 import { useTheme } from "@/context/ThemeContext";
+import { useAuth } from "@/context/AuthContext";
 
 type Showroom = {
   id: number;
@@ -46,6 +47,7 @@ export default function ShowroomDetailsScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { colors, theme } = useTheme();
+  const { token } = useAuth();
 
   const [showroom, setShowroom] = useState<Showroom | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,16 +82,25 @@ export default function ShowroomDetailsScreen() {
 
   const toggleFavorite = async () => {
     if (!showroom) return;
+
+    if (!token) {
+      router.push("/(tabs)/profile");
+      return;
+    }
+
+    // Optimistic update
+    setFavorite((prev) => !prev);
+
     try {
       if (favorite) {
         await api.removeFavorite(showroom.id, "showroom");
-        setFavorite(false);
       } else {
         await api.addFavorite(showroom.id, "showroom");
-        setFavorite(true);
       }
     } catch (e) {
       console.error(e);
+      // Revert on error
+      setFavorite((prev) => !prev);
     }
   };
 
@@ -234,7 +245,7 @@ export default function ShowroomDetailsScreen() {
               {showroom.name}
             </Text>
           </View>
-          {showroom.distance !== undefined && (
+          {showroom.distance != null && (
             <Text style={styles.distance}>
               {showroom.distance.toFixed(1)} mi away
             </Text>

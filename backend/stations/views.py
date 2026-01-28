@@ -33,7 +33,7 @@ def serialize_station(station, request=None):
     c_types = list(station.station_chargers.values_list('charger_type__name', flat=True).distinct())
     
     # Amenities
-    amenities = list(station.stationamenity_set.values_list('amenity__name', flat=True))
+    amenities = list(station.station_amenities.values_list('amenity__name', flat=True))
     
     # Max power
     from django.db.models import Max
@@ -73,7 +73,7 @@ def serialize_station(station, request=None):
         'id': station.station_id,
         'name': station.name,
         'place_type': 'CHARGING', 
-        'address': f"{station.street_address or ''} {station.city or ''}".strip(),
+        'address': f"{station.street_address or ''}, {station.city or ''}, {station.state or ''} {station.zip_code or ''}".strip(),
         'latitude': float(station.latitude) if station.latitude else 0.0,
         'longitude': float(station.longitude) if station.longitude else 0.0,
         'operator': station.operator_name,
@@ -105,7 +105,7 @@ def serialize_showroom(showroom, request=None):
         'id': showroom.showroom_id,
         'name': showroom.name,
         'place_type': 'SHOWROOM',
-        'address': f"{showroom.street_address or ''} {showroom.city or ''}".strip(),
+        'address': f"{showroom.street_address or ''}, {showroom.city or ''}, {showroom.state or ''} {showroom.zip_code or ''}".strip(),
         'latitude': float(showroom.latitude) if showroom.latitude else 0.0,
         'longitude': float(showroom.longitude) if showroom.longitude else 0.0,
         'operator': showroom.brand.name if showroom.brand else "Unknown Brand",
@@ -134,7 +134,7 @@ def serialize_service_center(service, request=None):
         'id': service.service_id,
         'name': service.name,
         'place_type': 'SERVICE',
-        'address': f"{service.street_address or ''} {service.city or ''}".strip(),
+        'address': f"{service.street_address or ''}, {service.city or ''}, {service.state or ''} {service.zip_code or ''}".strip(),
         'latitude': float(service.latitude) if service.latitude else 0.0,
         'longitude': float(service.longitude) if service.longitude else 0.0,
         'operator': "Service Center",
@@ -152,6 +152,127 @@ def serialize_service_center(service, request=None):
         'navigation_url': f"https://www.google.com/maps/search/?api=1&query={service.latitude},{service.longitude}",
         'type': 'service_center'
     }
+
+@api_view(['GET'])
+@api_permission_classes([permissions.AllowAny])
+def filter_places(request):
+    # Params
+    types = request.query_params.get('type', '').split(',') if request.query_params.get('type') else []
+    charger_types = request.query_params.get('charger_type', '').split(',') if request.query_params.get('charger_type') else []
+    amenities = request.query_params.get('amenities', '').split(',') if request.query_params.get('amenities') else []
+    
+    price_min = request.query_params.get('price_min')
+    price_max = request.query_params.get('price_max')
+    
+    # Location
+    lat = request.query_params.get('lat') or request.query_params.get('latitude')
+    lng = request.query_params.get('lng') or request.query_params.get('longitude')
+    dist_param = request.query_params.get('distance', 10)
+    availability = request.query_params.get('availability')
+    
+    limit_km = float(dist_param)
+    user_lat = float(lat) if lat else None
+    user_lng = float(lng) if lng else None
+
+    # Base Querysets
+    stations_qs = Station.objects.all().prefetch_related('station_chargers__charger_type', 'station_amenities__amenity')
+    showrooms_qs = Showroom.objects.all().select_related('brand').prefetch_related('showroom_amenities__amenity')
+    services_qs = ServiceCenter.objects.all().prefetch_related('service_amenities__amenity')
+
+    # Apply Filters
+    
+    # 1. Type Filter (if empty, include all)
+    include_stations = not types or 'station' in types
+    include_showrooms = not types or 'showroom' in types
+    include_services = not types or 'service_center' in types
+
+    # 2. Availability (Available Now) -> Only relevant for Stations typically
+    if availability == 'available' and include_stations:
+        # Filter stations that are 'ACTIVE' and have available chargers.
+        # Assuming we can check status='ACTIVE'. 
+        # For granular availability (station_chargers__is_available=True), we can annotate or filter.
+        stations_qs = stations_qs.filter(status='ACTIVE')
+        # Optional: check actual charger availability if model supports it easily.
+        # simpler to just check status for now unless requested deeper.
+
+    # 3. Charger Types (Stations only)
+    if charger_types and include_stations:
+        stations_qs = stations_qs.filter(station_chargers__charger_type__name__in=charger_types).distinct()
+
+    # 4. Amenities (AND Logic - must have ALL selected)
+    if amenities:
+        if include_stations:
+            for amenity in amenities:
+                stations_qs = stations_qs.filter(station_amenities__amenity__name__iexact=amenity.strip())
+            stations_qs = stations_qs.distinct()
+            
+        if include_showrooms:
+            for amenity in amenities:
+                showrooms_qs = showrooms_qs.filter(showroom_amenities__amenity__name__iexact=amenity)
+            showrooms_qs = showrooms_qs.distinct()
+            
+        if include_services:
+            for amenity in amenities:
+                services_qs = services_qs.filter(service_amenities__amenity__name__iexact=amenity)
+            services_qs = services_qs.distinct()
+
+    # 5. Price (Stations only)
+    if (price_min or price_max) and include_stations:
+        if price_min:
+             stations_qs = stations_qs.filter(station_chargers__start_price__gte=price_min)
+        if price_max:
+             stations_qs = stations_qs.filter(station_chargers__end_price__lte=price_max)
+        stations_qs = stations_qs.distinct()
+
+    # Apply Distance Filtering & Serialization
+    combined_results = []
+
+    if include_stations:
+        for s in stations_qs:
+            s_lat = float(s.latitude) if s.latitude else 0
+            s_lng = float(s.longitude) if s.longitude else 0
+            
+            dist = None
+            if user_lat and user_lng and s_lat and s_lng:
+                dist = haversine(user_lng, user_lat, s_lng, s_lat)
+                if dist > limit_km:
+                    continue
+            
+            s.distance = dist
+            combined_results.append(serialize_station(s, request))
+
+    if include_showrooms:
+        for sh in showrooms_qs:
+            sh_lat = float(sh.latitude) if sh.latitude else 0
+            sh_lng = float(sh.longitude) if sh.longitude else 0
+
+            dist = None
+            if user_lat and user_lng and sh_lat and sh_lng:
+                dist = haversine(user_lng, user_lat, sh_lng, sh_lat)
+                if dist > limit_km:
+                    continue
+            
+            sh.distance = dist
+            combined_results.append(serialize_showroom(sh, request))
+
+    if include_services:
+        for sc in services_qs:
+            sc_lat = float(sc.latitude) if sc.latitude else 0
+            sc_lng = float(sc.longitude) if sc.longitude else 0
+
+            dist = None
+            if user_lat and user_lng and sc_lat and sc_lng:
+                dist = haversine(user_lng, user_lat, sc_lng, sc_lat)
+                if dist > limit_km:
+                    continue
+            
+            sc.distance = dist
+            combined_results.append(serialize_service_center(sc, request))
+
+    # Sort by distance
+    combined_results.sort(key=lambda x: x['distance'] if x['distance'] is not None else 99999)
+    
+    return Response(combined_results)
 
 @api_view(['GET'])
 @api_permission_classes([permissions.AllowAny])
@@ -177,7 +298,7 @@ def nearby_places(request):
     limit_km = float(dist_param)
     
     # Stations
-    stations = list(Station.objects.all().prefetch_related('station_chargers__charger_type', 'stationamenity_set__amenity'))
+    stations = list(Station.objects.all().prefetch_related('station_chargers__charger_type', 'station_amenities__amenity'))
     
     # Showrooms
     showrooms = list(Showroom.objects.all().select_related('brand').prefetch_related('showroom_amenities__amenity'))
@@ -260,15 +381,32 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        
+        results = []
+        for fav in queryset:
+            place_data = None
+            if fav.station:
+                place_data = serialize_station(fav.station, request)
+            elif fav.showroom:
+                place_data = serialize_showroom(fav.showroom, request)
+            elif fav.service_center:
+                place_data = serialize_service_center(fav.service_center, request)
+            
+            if place_data:
+                results.append({
+                    'id': fav.id,
+                    'created_at': fav.created_at,
+                    'place': place_data
+                })
+                
+        return Response(results)
 
     @action(detail=False, methods=['post'])
     def add(self, request):
         # Expect station_id, showroom_id, or service_id
-        station_id = request.data.get('station_id')
-        showroom_id = request.data.get('showroom_id')
-        service_id = request.data.get('service_id')
+        station_id = request.data.get('station_id') or request.query_params.get('station_id')
+        showroom_id = request.data.get('showroom_id') or request.query_params.get('showroom_id')
+        service_id = request.data.get('service_id') or request.query_params.get('service_id')
         
         if not station_id and not showroom_id and not service_id:
              return Response({"error": "Provide station_id, showroom_id, or service_id"}, status=400)
@@ -288,14 +426,14 @@ class FavoriteViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['delete'])
     def remove(self, request):
-        station_id = request.data.get('station_id')
-        showroom_id = request.data.get('showroom_id')
-        service_id = request.data.get('service_id')
+        station_id = request.data.get('station_id') or request.query_params.get('station_id')
+        showroom_id = request.data.get('showroom_id') or request.query_params.get('showroom_id')
+        service_id = request.data.get('service_id') or request.query_params.get('service_id')
         
         if station_id:
             Favorite.objects.filter(user=request.user, station_id=station_id).delete()
         elif showroom_id:
-            Favorite.objects.filter(user=request.user, showroom=showroom_id).delete()
+            Favorite.objects.filter(user=request.user, showroom_id=showroom_id).delete()
         elif service_id:
             Favorite.objects.filter(user=request.user, service_center_id=service_id).delete()
             
@@ -306,17 +444,38 @@ class StationViewSet(viewsets.ModelViewSet):
     serializer_class = StationSerializer
     permission_classes = [permissions.AllowAny]
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = serialize_station(instance, request)
+        return Response(data)
+
 class ShowroomViewSet(viewsets.ModelViewSet):
     queryset = Showroom.objects.all()
     serializer_class = ShowroomSerializer
     permission_classes = [permissions.AllowAny]
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = serialize_showroom(instance, request)
+        return Response(data)
 
 class ServiceCenterViewSet(viewsets.ModelViewSet):
     queryset = ServiceCenter.objects.all()
     serializer_class = ServiceCenterSerializer
     permission_classes = [permissions.AllowAny]
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        data = serialize_service_center(instance, request)
+        return Response(data)
+
 @api_view(['GET'])
 @api_permission_classes([permissions.AllowAny])
 def place_options(request):
-    return Response({"charger_types": [], "amenities": []})
+    charger_types = ChargerType.objects.values_list('name', flat=True).distinct()
+    # Return list of {name, category} for amenities
+    amenities = Amenity.objects.values('name', 'category').distinct()
+    return Response({
+        "charger_types": list(charger_types), 
+        "amenities": list(amenities)
+    })

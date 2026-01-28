@@ -269,7 +269,7 @@ export default function HomeScreen() {
             pathname: "/details",
             params: {
               id: data.id,
-              type: data.type || "place",
+              type: data.entity_type || "station",
             },
           });
         }
@@ -382,7 +382,7 @@ export default function HomeScreen() {
                         : "/details",
                   params: {
                     id: station.id,
-                    type: station.type || "place",
+                    type: station.type || "station",
                   },
                 })
               }
