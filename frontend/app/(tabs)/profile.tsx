@@ -101,7 +101,7 @@ export default function ProfileScreen() {
 
             <View style={styles.userDetails}>
               <Text style={styles.name}>
-                {user?.first_name} {user?.last_name}
+                {user?.full_name }
               </Text>
               <Text style={styles.email}>{user?.email}</Text>
               <View style={styles.memberBadge}>

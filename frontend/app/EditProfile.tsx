@@ -29,8 +29,7 @@ export default function EditProfileScreen() {
 
   // User Data State
   const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
+    fullName: "",
     email: "",
     phone: "",
   });
@@ -43,8 +42,8 @@ export default function EditProfileScreen() {
     try {
       const user = await api.getProfile();
       setForm({
-        firstName: user.first_name || "",
-        lastName: user.last_name || "",
+        fullName:
+          user.full_name || `${user.first_name} ${user.last_name}`.trim(),
         email: user.email || "",
         phone: user.profile?.phone_number || "",
       });
@@ -60,8 +59,7 @@ export default function EditProfileScreen() {
       setLoading(true);
       // Prepare payload: direct fields for user, nested for profile
       const payload = {
-        first_name: form.firstName,
-        last_name: form.lastName,
+        full_name: form.fullName,
         profile: {
           phone_number: form.phone,
         },
@@ -140,7 +138,7 @@ export default function EditProfileScreen() {
           <View style={styles.form}>
             <View style={styles.inputGroup}>
               <Text style={[styles.label, { color: colors.textSecondary }]}>
-                First Name
+                Full Name
               </Text>
               <View
                 style={[
@@ -154,31 +152,8 @@ export default function EditProfileScreen() {
                 <User size={20} color={colors.textSecondary} />
                 <TextInput
                   style={[styles.input, { color: colors.text }]}
-                  value={form.firstName}
-                  onChangeText={(t) => setForm({ ...form, firstName: t })}
-                  placeholderTextColor={colors.textSecondary}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: colors.textSecondary }]}>
-                Last Name
-              </Text>
-              <View
-                style={[
-                  styles.inputContainer,
-                  {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <User size={20} color={colors.textSecondary} />
-                <TextInput
-                  style={[styles.input, { color: colors.text }]}
-                  value={form.lastName}
-                  onChangeText={(t) => setForm({ ...form, lastName: t })}
+                  value={form.fullName}
+                  onChangeText={(t) => setForm({ ...form, fullName: t })}
                   placeholderTextColor={colors.textSecondary}
                 />
               </View>

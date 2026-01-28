@@ -29,6 +29,25 @@ class ChargerType(models.Model):
     def __str__(self):
         return f"{self.name} ({self.connector_type}, {self.max_power_kw}kW)"
 
+# Address Model
+class Address(models.Model):
+    street = models.TextField()
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100)
+    country = models.CharField(max_length=100, default='USA')
+    zip_code = models.CharField(max_length=20)
+    
+    latitude = models.DecimalField(max_digits=10, decimal_places=8, blank=True, null=True)
+    longitude = models.DecimalField(max_digits=11, decimal_places=8, blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'addresses'
+
+    def __str__(self):
+        return f"{self.street}, {self.city}"
+
 # New Stations
 class Station(models.Model):
     STATUS_CHOICES = [
@@ -49,14 +68,8 @@ class Station(models.Model):
 
     opening_hours = models.CharField(max_length=100, blank=True, null=True)
 
-    # Location data
-    street_address = models.TextField(blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    state = models.CharField(max_length=100, blank=True, null=True)
-    zip_code = models.CharField(max_length=20, blank=True, null=True)
-
-    latitude = models.DecimalField(max_digits=10, decimal_places=8, blank=True, null=True)
-    longitude = models.DecimalField(max_digits=11, decimal_places=8, blank=True, null=True)
+    # Location data - Normalized
+    address = models.ForeignKey(Address, on_delete=models.PROTECT, related_name='stations', null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -130,14 +143,8 @@ class Showroom(models.Model):
     email = models.EmailField(max_length=150, blank=True, null=True)
     website = models.URLField(max_length=255, blank=True, null=True)
     
-    # Location Data
-    street_address = models.TextField(blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    state = models.CharField(max_length=100, blank=True, null=True)
-    zip_code = models.CharField(max_length=20, blank=True, null=True)
-    
-    latitude = models.DecimalField(max_digits=10, decimal_places=8, blank=True, null=True)
-    longitude = models.DecimalField(max_digits=11, decimal_places=8, blank=True, null=True)
+    # Location Data - Normalized
+    address = models.ForeignKey(Address, on_delete=models.PROTECT, related_name='showrooms', null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -179,14 +186,8 @@ class ServiceCenter(models.Model):
     email = models.EmailField(max_length=150, blank=True, null=True)
     website = models.URLField(max_length=255, blank=True, null=True)
     
-    # Location Data
-    street_address = models.TextField(blank=True, null=True)
-    city = models.CharField(max_length=100, blank=True, null=True)
-    state = models.CharField(max_length=100, blank=True, null=True)
-    zip_code = models.CharField(max_length=20, blank=True, null=True)
-    
-    latitude = models.DecimalField(max_digits=10, decimal_places=8, blank=True, null=True)
-    longitude = models.DecimalField(max_digits=11, decimal_places=8, blank=True, null=True)
+    # Location Data - Normalized
+    address = models.ForeignKey(Address, on_delete=models.PROTECT, related_name='service_centers', null=True)
     
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -12,6 +12,8 @@ class UserLocation(models.Model):
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
+    full_name = models.CharField(max_length=255, default="")
+    middle_name = models.CharField(max_length=255, blank=True)
 
     def __str__(self):
         return self.username

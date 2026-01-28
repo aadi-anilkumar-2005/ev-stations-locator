@@ -27,7 +27,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile', 'preferences', 'notifications', 'current_latitude', 'current_longitude', 'last_location_update']
+        fields = ['id', 'username', 'email', 'first_name', 'middle_name', 'last_name', 'full_name', 'profile', 'preferences', 'notifications', 'current_latitude', 'current_longitude', 'last_location_update']
         read_only_fields = ['last_location_update']
 
     def update(self, instance, validated_data):
@@ -37,6 +37,32 @@ class UserSerializer(serializers.ModelSerializer):
         notifications_data = validated_data.pop('notifications', None)
 
         # Update User fields
+        if 'full_name' in validated_data:
+            full_name = validated_data['full_name'].strip()
+            # Name Parsing Logic
+            parts = full_name.split()
+            first_name = ""
+            last_name = ""
+            middle_name = ""
+
+            if len(parts) == 1:
+                first_name = parts[0]
+            elif len(parts) == 2:
+                first_name = parts[0]
+                last_name = parts[-1]
+            elif len(parts) >= 3:
+                first_name = parts[0]
+                last_name = parts[-1]
+                middle_name = " ".join(parts[1:-1])
+            
+            instance.first_name = first_name
+            instance.middle_name = middle_name
+            instance.last_name = last_name
+            instance.full_name = full_name
+            
+            # Remove full_name from validated_data to avoid double setting if iterating
+            del validated_data['full_name']
+
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
@@ -85,46 +111,66 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
-
+    full_name = serializers.CharField(write_only=True, required=False)
     phone_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     class Meta:
         model = User
-        fields = ['email', 'password', 'first_name', 'last_name', 'phone_number']
+        fields = ['email', 'password', 'full_name', 'first_name', 'last_name', 'phone_number']
 
     def create(self, validated_data):
         email = validated_data['email']
+        password = validated_data['password']
         
-        # Frontend sends "Full Name" in the 'first_name' field
-        full_name = validated_data.get('first_name', '').strip()
-        parts = full_name.split(' ', 1)
-        if len(parts) > 1:
-            first_name = parts[0]
-            last_name = parts[1]
-        else:
-            first_name = full_name
-            last_name = ''
+        full_name = validated_data.get('full_name', '').strip()
+        first_name_input = validated_data.get('first_name', '').strip()
+        last_name_input = validated_data.get('last_name', '').strip()
 
-        # Generate a random internal username since client doesn't provide one
-        # and we don't want to use the email.
-        import uuid
-        username = f"user_{uuid.uuid4().hex[:12]}"
+        # Fallback: if full_name is missing, try to construct it or use inputs
+        if not full_name:
+            if first_name_input:
+                full_name = f"{first_name_input} {last_name_input}".strip()
+            else:
+                raise serializers.ValidationError({"full_name": "This field is required."})
 
         phone_number = validated_data.get('phone_number', '')
+
+        # Name Parsing Logic
+        parts = full_name.split()
+        first_name = ""
+        last_name = ""
+        middle_name = ""
+
+        if len(parts) == 1:
+            first_name = parts[0]
+        elif len(parts) == 2:
+            first_name = parts[0]
+            last_name = parts[-1]
+        elif len(parts) >= 3:
+            first_name = parts[0]
+            last_name = parts[-1]
+            middle_name = " ".join(parts[1:-1])
+
+        # Generate a random internal username
+        import uuid
+        username = f"user_{uuid.uuid4().hex[:12]}"
 
         user = User.objects.create_user(
             username=username,
             email=email,
-            password=validated_data['password'],
+            password=password,
+            full_name=full_name,
             first_name=first_name,
+            middle_name=middle_name,
             last_name=last_name,
         )
         
         # Save phone number to profile
         if phone_number:
             # Signal should have created the profile
-            user.profile.phone_number = phone_number
-            user.profile.save()
+            if hasattr(user, 'profile'):
+                user.profile.phone_number = phone_number
+                user.profile.save()
             
         return user
 
@@ -162,6 +208,14 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         if not user.is_active:
             raise AuthenticationFailed('User account is disabled.')
 
+        if user.is_superuser:
+            raise AuthenticationFailed('No active account found with the given credentials')
+
+        # Update last_login
+        from django.contrib.auth.models import update_last_login
+        update_last_login(None, user)
+
+        # Generate tokens
         refresh = RefreshToken.for_user(user)
 
         return {
@@ -170,10 +224,11 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
             'user': {
                 'id': user.id,
                 'email': user.email,
-                'username': user.username,
+                'username': user.username, # Keep internal username for reference if needed
+                'full_name': user.full_name,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
-                'phone_number': getattr(user.profile, 'phone_number', '') if hasattr(user, 'profile') else '',
+                'phone_number': getattr(user, 'profile', None).phone_number if hasattr(user, 'profile') else None,
             }
         }
 

@@ -69,13 +69,14 @@ def serialize_station(station, request=None):
     if request and request.user.is_authenticated:
         is_fav = Favorite.objects.filter(user=request.user, station=station).exists()
     
+    addr = station.address
     return {
         'id': station.station_id,
         'name': station.name,
         'place_type': 'CHARGING', 
-        'address': f"{station.street_address or ''}, {station.city or ''}, {station.state or ''} {station.zip_code or ''}".strip(),
-        'latitude': float(station.latitude) if station.latitude else 0.0,
-        'longitude': float(station.longitude) if station.longitude else 0.0,
+        'address': f"{addr.street}, {addr.city}, {addr.state} {addr.zip_code}".strip() if addr else "",
+        'latitude': float(addr.latitude) if addr and addr.latitude else 0.0,
+        'longitude': float(addr.longitude) if addr and addr.longitude else 0.0,
         'operator': station.operator_name,
         'opening_hours': station.opening_hours,
         'status': station.status.upper(), 
@@ -89,7 +90,7 @@ def serialize_station(station, request=None):
         'distance': getattr(station, 'distance', None),
         'is_favorite': is_fav,
         'is_fast_charging': max_kw >= 50,
-        'navigation_url': f"https://www.google.com/maps/search/?api=1&query={station.latitude},{station.longitude}",
+        'navigation_url': f"https://www.google.com/maps/search/?api=1&query={addr.latitude},{addr.longitude}" if addr else "",
         'available_count': station.station_chargers.filter(is_available=True).count(),
         'type': 'station'
     }
@@ -101,13 +102,14 @@ def serialize_showroom(showroom, request=None):
     if request and request.user.is_authenticated:
         is_fav = Favorite.objects.filter(user=request.user, showroom=showroom).exists()
 
+    addr = showroom.address
     return {
         'id': showroom.showroom_id,
         'name': showroom.name,
         'place_type': 'SHOWROOM',
-        'address': f"{showroom.street_address or ''}, {showroom.city or ''}, {showroom.state or ''} {showroom.zip_code or ''}".strip(),
-        'latitude': float(showroom.latitude) if showroom.latitude else 0.0,
-        'longitude': float(showroom.longitude) if showroom.longitude else 0.0,
+        'address': f"{addr.street}, {addr.city}, {addr.state} {addr.zip_code}".strip() if addr else "",
+        'latitude': float(addr.latitude) if addr and addr.latitude else 0.0,
+        'longitude': float(addr.longitude) if addr and addr.longitude else 0.0,
         'operator': showroom.brand.name if showroom.brand else "Unknown Brand",
         'opening_hours': showroom.opening_hours,
         'status': showroom.status.upper(), 
@@ -119,7 +121,7 @@ def serialize_showroom(showroom, request=None):
         'images': [],
         'distance': getattr(showroom, 'distance', None),
         'is_favorite': is_fav,
-        'navigation_url': f"https://www.google.com/maps/search/?api=1&query={showroom.latitude},{showroom.longitude}",
+        'navigation_url': f"https://www.google.com/maps/search/?api=1&query={addr.latitude},{addr.longitude}" if addr else "",
         'type': 'showroom'
     }
 
@@ -130,13 +132,14 @@ def serialize_service_center(service, request=None):
     if request and request.user.is_authenticated:
         is_fav = Favorite.objects.filter(user=request.user, service_center=service).exists()
 
+    addr = service.address
     return {
         'id': service.service_id,
         'name': service.name,
         'place_type': 'SERVICE',
-        'address': f"{service.street_address or ''}, {service.city or ''}, {service.state or ''} {service.zip_code or ''}".strip(),
-        'latitude': float(service.latitude) if service.latitude else 0.0,
-        'longitude': float(service.longitude) if service.longitude else 0.0,
+        'address': f"{addr.street}, {addr.city}, {addr.state} {addr.zip_code}".strip() if addr else "",
+        'latitude': float(addr.latitude) if addr and addr.latitude else 0.0,
+        'longitude': float(addr.longitude) if addr and addr.longitude else 0.0,
         'operator': "Service Center",
         'phone': service.phone,
         'email': service.email,
@@ -149,7 +152,7 @@ def serialize_service_center(service, request=None):
         'distance': getattr(service, 'distance', None),
         'is_favorite': is_fav,
         'is_emergency': service.is_emergency_service,
-        'navigation_url': f"https://www.google.com/maps/search/?api=1&query={service.latitude},{service.longitude}",
+        'navigation_url': f"https://www.google.com/maps/search/?api=1&query={addr.latitude},{addr.longitude}" if addr else "",
         'type': 'service_center'
     }
 
@@ -175,9 +178,9 @@ def filter_places(request):
     user_lng = float(lng) if lng else None
 
     # Base Querysets
-    stations_qs = Station.objects.all().prefetch_related('station_chargers__charger_type', 'station_amenities__amenity')
-    showrooms_qs = Showroom.objects.all().select_related('brand').prefetch_related('showroom_amenities__amenity')
-    services_qs = ServiceCenter.objects.all().prefetch_related('service_amenities__amenity')
+    stations_qs = Station.objects.all().select_related('address').prefetch_related('station_chargers__charger_type', 'station_amenities__amenity')
+    showrooms_qs = Showroom.objects.all().select_related('brand', 'address').prefetch_related('showroom_amenities__amenity')
+    services_qs = ServiceCenter.objects.all().select_related('address').prefetch_related('service_amenities__amenity')
 
     # Apply Filters
     
@@ -189,11 +192,7 @@ def filter_places(request):
     # 2. Availability (Available Now) -> Only relevant for Stations typically
     if availability == 'available' and include_stations:
         # Filter stations that are 'ACTIVE' and have available chargers.
-        # Assuming we can check status='ACTIVE'. 
-        # For granular availability (station_chargers__is_available=True), we can annotate or filter.
-        stations_qs = stations_qs.filter(status='ACTIVE')
-        # Optional: check actual charger availability if model supports it easily.
-        # simpler to just check status for now unless requested deeper.
+        stations_qs = stations_qs.filter(status='active')
 
     # 3. Charger Types (Stations only)
     if charger_types and include_stations:
@@ -229,8 +228,10 @@ def filter_places(request):
 
     if include_stations:
         for s in stations_qs:
-            s_lat = float(s.latitude) if s.latitude else 0
-            s_lng = float(s.longitude) if s.longitude else 0
+            # Address Check
+            addr = s.address
+            s_lat = float(addr.latitude) if addr and addr.latitude else 0
+            s_lng = float(addr.longitude) if addr and addr.longitude else 0
             
             dist = None
             if user_lat and user_lng and s_lat and s_lng:
@@ -243,8 +244,9 @@ def filter_places(request):
 
     if include_showrooms:
         for sh in showrooms_qs:
-            sh_lat = float(sh.latitude) if sh.latitude else 0
-            sh_lng = float(sh.longitude) if sh.longitude else 0
+            addr = sh.address
+            sh_lat = float(addr.latitude) if addr and addr.latitude else 0
+            sh_lng = float(addr.longitude) if addr and addr.longitude else 0
 
             dist = None
             if user_lat and user_lng and sh_lat and sh_lng:
@@ -257,8 +259,9 @@ def filter_places(request):
 
     if include_services:
         for sc in services_qs:
-            sc_lat = float(sc.latitude) if sc.latitude else 0
-            sc_lng = float(sc.longitude) if sc.longitude else 0
+            addr = sc.address
+            sc_lat = float(addr.latitude) if addr and addr.latitude else 0
+            sc_lng = float(addr.longitude) if addr and addr.longitude else 0
 
             dist = None
             if user_lat and user_lng and sc_lat and sc_lng:
@@ -298,35 +301,38 @@ def nearby_places(request):
     limit_km = float(dist_param)
     
     # Stations
-    stations = list(Station.objects.all().prefetch_related('station_chargers__charger_type', 'station_amenities__amenity'))
+    stations = list(Station.objects.all().select_related('address').prefetch_related('station_chargers__charger_type', 'station_amenities__amenity'))
     
     # Showrooms
-    showrooms = list(Showroom.objects.all().select_related('brand').prefetch_related('showroom_amenities__amenity'))
+    showrooms = list(Showroom.objects.all().select_related('brand', 'address').prefetch_related('showroom_amenities__amenity'))
 
     # Service Centers
-    services = list(ServiceCenter.objects.all().prefetch_related('service_amenities__amenity'))
+    services = list(ServiceCenter.objects.all().select_related('address').prefetch_related('service_amenities__amenity'))
 
     combined_results = []
     
     for s in stations:
-        if s.latitude and s.longitude:
-            d = haversine(lng, lat, float(s.longitude), float(s.latitude))
+        addr = s.address
+        if addr and addr.latitude and addr.longitude:
+            d = haversine(lng, lat, float(addr.longitude), float(addr.latitude))
             if d <= limit_km:
                 s.distance = d
                 serialized = serialize_station(s, request)
                 combined_results.append(serialized)
 
     for sh in showrooms:
-        if sh.latitude and sh.longitude:
-            d = haversine(lng, lat, float(sh.longitude), float(sh.latitude))
+        addr = sh.address
+        if addr and addr.latitude and addr.longitude:
+            d = haversine(lng, lat, float(addr.longitude), float(addr.latitude))
             if d <= limit_km:
                 sh.distance = d
                 serialized = serialize_showroom(sh, request)
                 combined_results.append(serialized)
 
     for sc in services:
-        if sc.latitude and sc.longitude:
-            d = haversine(lng, lat, float(sc.longitude), float(sc.latitude))
+        addr = sc.address
+        if addr and addr.latitude and addr.longitude:
+            d = haversine(lng, lat, float(addr.longitude), float(addr.latitude))
             if d <= limit_km:
                 sc.distance = d
                 serialized = serialize_service_center(sc, request)
@@ -342,13 +348,13 @@ def search_places(request):
     if not query:
         return Response([])
         
-    stations = Station.objects.filter(name__icontains=query)
+    stations = Station.objects.filter(name__icontains=query).select_related('address')
     stations_data = [serialize_station(s, request) for s in stations]
 
-    showrooms = Showroom.objects.filter(name__icontains=query)
+    showrooms = Showroom.objects.filter(name__icontains=query).select_related('address', 'brand')
     showrooms_data = [serialize_showroom(sh, request) for sh in showrooms]
 
-    services = ServiceCenter.objects.filter(name__icontains=query)
+    services = ServiceCenter.objects.filter(name__icontains=query).select_related('address')
     services_data = [serialize_service_center(sc, request) for sc in services]
 
     return Response(stations_data + showrooms_data + services_data)
@@ -356,13 +362,13 @@ def search_places(request):
 @api_view(['GET'])
 @api_permission_classes([permissions.AllowAny])
 def map_home(request):     
-    stations = Station.objects.all().prefetch_related('station_chargers__charger_type')
+    stations = Station.objects.all().select_related('address').prefetch_related('station_chargers__charger_type')
     station_results = MapStationSerializer(stations, many=True).data
 
-    showrooms = Showroom.objects.all()
+    showrooms = Showroom.objects.all().select_related('address')
     showroom_results = MapShowroomSerializer(showrooms, many=True).data
 
-    services = ServiceCenter.objects.all()
+    services = ServiceCenter.objects.all().select_related('address')
     service_results = MapServiceCenterSerializer(services, many=True).data
 
     return Response(station_results + showroom_results + service_results)

@@ -2,8 +2,13 @@ from django.contrib import admin
 from .models import (
     Amenity, Station, StationCharger, StationAmenity,
     ChargerType, Favorite, Brand, Showroom, ShowroomAmenity,
-    ServiceCenter, ServiceAmenity
+    ServiceCenter, ServiceAmenity, Address
 )
+
+@admin.register(Address)
+class AddressAdmin(admin.ModelAdmin):
+    list_display = ('street', 'city', 'state', 'zip_code')
+    search_fields = ('street', 'city', 'zip_code')
 
 @admin.register(ChargerType)
 class ChargerTypeAdmin(admin.ModelAdmin):
@@ -38,9 +43,17 @@ class StationChargerAdmin(admin.ModelAdmin):
 
 @admin.register(Station)
 class StationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'operator_name', 'status', 'city', 'state')
-    list_filter = ('status', 'state')
-    search_fields = ('name', 'operator_name', 'street_address')
+    list_display = ('name', 'operator_name', 'status', 'get_city', 'get_state')
+    list_filter = ('status', 'address__state')
+    search_fields = ('name', 'operator_name', 'address__street')
+    
+    def get_city(self, obj):
+        return obj.address.city if obj.address else '-'
+    get_city.short_description = 'City'
+
+    def get_state(self, obj):
+        return obj.address.state if obj.address else '-'
+    get_state.short_description = 'State'
 
 # Showroom Admin
 from .models import Brand, Showroom, ShowroomAmenity
@@ -56,10 +69,18 @@ class ServiceAmenityInline(admin.TabularInline):
 
 @admin.register(ServiceCenter)
 class ServiceCenterAdmin(admin.ModelAdmin):
-    list_display = ('name', 'is_emergency_service', 'status', 'city', 'state')
-    list_filter = ('is_emergency_service', 'status', 'state')
-    search_fields = ('name', 'city')
+    list_display = ('name', 'is_emergency_service', 'status', 'get_city', 'get_state')
+    list_filter = ('is_emergency_service', 'status', 'address__state')
+    search_fields = ('name', 'address__city')
     inlines = [ServiceAmenityInline]
+    
+    def get_city(self, obj):
+        return obj.address.city if obj.address else '-'
+    get_city.short_description = 'City'
+
+    def get_state(self, obj):
+        return obj.address.state if obj.address else '-'
+    get_state.short_description = 'State'
 
 class ShowroomAmenityInline(admin.TabularInline):
     model = ShowroomAmenity
@@ -67,7 +88,15 @@ class ShowroomAmenityInline(admin.TabularInline):
 
 @admin.register(Showroom)
 class ShowroomAdmin(admin.ModelAdmin):
-    list_display = ('name', 'brand', 'status', 'city', 'state')
-    list_filter = ('brand', 'status', 'city')
-    search_fields = ('name', 'brand__name', 'city')
+    list_display = ('name', 'brand', 'status', 'get_city', 'get_state')
+    list_filter = ('brand', 'status', 'address__city')
+    search_fields = ('name', 'brand__name', 'address__city')
     inlines = [ShowroomAmenityInline]
+
+    def get_city(self, obj):
+        return obj.address.city if obj.address else '-'
+    get_city.short_description = 'City'
+
+    def get_state(self, obj):
+        return obj.address.state if obj.address else '-'
+    get_state.short_description = 'State'
