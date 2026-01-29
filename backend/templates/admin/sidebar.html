@@ -62,6 +62,12 @@
             </a>
         </li>
         <li>
+            <a href="{% url 'admin-brands' %}"
+                class="nav-link {% if 'admin-brands' in request.resolver_match.url_name %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
+                <i data-lucide="tag" class="w-5 h-5"></i> Brands
+            </a>
+        </li>
+        <li>
             <a href="{% url 'admin-charger-types' %}"
                 class="nav-link {% if 'admin-charger-types' in request.resolver_match.url_name %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
                 <i data-lucide="battery-charging" class="w-5 h-5"></i> Charger Types

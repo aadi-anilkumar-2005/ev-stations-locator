@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Showrooms - ChargePoint Admin</title>
+    <title>Brands - ChargePoint Admin</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     {% load static %}
     <link rel="stylesheet" href="{% static 'admin/css/style.css' %}">
@@ -20,84 +20,30 @@
             <header class="bg-white border-bottom px-4 py-3 sticky-top">
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
-                        <h4 class="fw-bold mb-0">Showroom Management</h4>
-                        <p class="text-muted mb-0 small">Manage vehicle showrooms</p>
+                        <h4 class="fw-bold mb-0">Brand Management</h4>
+                        <p class="text-muted mb-0 small">Manage vehicle brands</p>
                     </div>
-                    <a href="{% url 'admin-add-showroom' %}"
+                    <a href="{% url 'admin-add-brand' %}"
                         class="btn btn-emerald text-white fw-bold d-flex align-items-center gap-2">
-                        <i data-lucide="plus" class="w-4 h-4"></i> Add Showroom
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add Brand
                     </a>
                 </div>
             </header>
             <div class="p-4">
                 <div class="card border-0 shadow-sm rounded-4">
-                    <div class="card-body border-bottom p-4">
-                        <div class="row g-3">
-                            <div class="col-md-9">
-                                <div class="input-group">
-                                    <span class="input-group-text bg-white border-end-0"><i data-lucide="search"
-                                            class="w-4 h-4 text-muted"></i></span>
-                                    <input type="text" class="form-control border-start-0 ps-0"
-                                        placeholder="Search showrooms...">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <select class="form-select">
-                                    <option value="all">All Status</option>
-                                    <option value="active">Active</option>
-                                    <option value="renovation">Renovation</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="bg-light">
                                 <tr>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Showroom</th>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Location</th>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Brand</th>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Contact</th>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Hours</th>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Status</th>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Actions</th>
+                                    <th class="px-4 py-3 text-secondary text-uppercase small">Name</th>
+                                    <th class="px-4 py-3 text-secondary text-uppercase small text-end">Actions</th>
                                 </tr>
                             </thead>
-                            <tbody id="showrooms-table-body">
-                                {% for showroom in showrooms %}
+                            <tbody>
+                                {% for brand in brands %}
                                 <tr>
-                                    <td class="px-4 py-3">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="bg-primary-subtle rounded p-2 text-primary">
-                                                <i data-lucide="store" class="w-5 h-5"></i>
-                                            </div>
-                                            <div>
-                                                <div class="fw-bold">{{ showroom.name }}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <div class="text-truncate" style="max-width: 150px;">{{ showroom.address.street|default:"-" }}</div>
-                                        <div class="small text-muted">{{ showroom.address.city|default:"-" }}, {{ showroom.address.state|default:"-" }}</div>
-                                    </td>
-                                    <td class="px-4 py-3">{{ showroom.brand.name|default:"-" }}</td>
-                                    <td class="px-4 py-3">
-                                        <div class="small">{{ showroom.phone|default:"-" }}</div>
-                                        <div class="small text-muted">{{ showroom.email|default:"-" }}</div>
-                                    </td>
-                                    <td class="px-4 py-3">{{ showroom.opening_hours|default:"-" }}</td>
-                                    <td class="px-4 py-3">
-                                        {% if showroom.status == 'active' %}
-                                        <span class="badge bg-emerald-subtle text-emerald rounded-pill">Active</span>
-                                        {% elif showroom.status == 'renovation' %}
-                                        <span
-                                            class="badge bg-warning-subtle text-warning rounded-pill">Renovation</span>
-                                        {% else %}
-                                        <span
-                                            class="badge bg-secondary-subtle text-secondary rounded-pill">Closed</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="px-4 py-3">
+                                    <td class="px-4 py-3 fw-medium">{{ brand.name }}</td>
+                                    <td class="px-4 py-3 text-end">
                                         <div class="dropdown">
                                             <button class="btn btn-sm btn-light rounded-circle"
                                                 data-bs-toggle="dropdown">
@@ -105,18 +51,11 @@
                                             </button>
                                             <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm">
                                                 <li><a class="dropdown-item"
-                                                        href="{% url 'admin-showroom-detail' showroom.pk %}">View
-                                                        Details</a></li>
-                                                <li><a class="dropdown-item"
-                                                        href="{% url 'admin-showroom-edit' showroom.pk %}">Edit
-                                                        Details</a></li>
-                                                <li>
-                                                    <hr class="dropdown-divider">
-                                                </li>
+                                                        href="{% url 'admin-brand-edit' brand.pk %}">Edit</a></li>
                                                 <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal"
                                                         data-bs-target="#deleteModal"
-                                                        data-delete-url="{% url 'admin-showroom-delete' showroom.pk %}"
-                                                        data-item-name="{{ showroom.name }}">Delete</a>
+                                                        data-delete-url="{% url 'admin-brand-delete' brand.pk %}"
+                                                        data-item-name="{{ brand.name }}">Delete</a>
                                                 </li>
                                             </ul>
                                         </div>
@@ -124,18 +63,19 @@
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="5" class="text-center py-4 text-muted">
-                                        No showrooms found. Click "Add Showroom" to create one.
+                                    <td colspan="2" class="text-center py-4 text-muted">
+                                        No brands found. Click "Add Brand" to create one.
                                     </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    {% if page_obj.paginator.count > 0 %}
+                    {% if is_paginated %}
                     <div class="card-footer bg-white p-4 rounded-bottom-4">
                         <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-muted small">Showing {{ page_obj.start_index }} to {{ page_obj.end_index }} of {{ page_obj.paginator.count }} showrooms</span>
+                            <span class="text-muted small">Showing {{ page_obj.start_index }} to {{ page_obj.end_index
+                                }} of {{ page_obj.paginator.count }} brands</span>
                             <nav>
                                 <ul class="pagination pagination-sm mb-0">
                                     {% if page_obj.has_previous %}
@@ -150,7 +90,8 @@
                                     <li class="page-item active"><a class="page-link bg-emerald border-emerald"
                                             href="?page={{ num }}">{{ num }}</a></li>
                                     {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %} <li
-                                        class="page-item"><a class="page-link text-dark" href="?page={{ num }}">{{ num }}</a></li>
+                                        class="page-item"><a class="page-link text-dark" href="?page={{ num }}">{{ num
+                                            }}</a></li>
                                         {% endif %}
                                         {% endfor %}
 
@@ -178,7 +119,7 @@
                     <div class="bg-danger-subtle text-danger rounded-circle p-3 d-inline-flex mb-3">
                         <i data-lucide="alert-triangle" class="w-8 h-8"></i>
                     </div>
-                    <h4 class="fw-bold mb-2">Delete Showroom?</h4>
+                    <h4 class="fw-bold mb-2">Delete Brand?</h4>
                     <p class="text-muted mb-4">Are you sure you want to delete <span class="fw-bold text-dark"
                             id="deleteItemName">that item</span>? This action cannot be undone.</p>
                     <form method="post" id="deleteForm">

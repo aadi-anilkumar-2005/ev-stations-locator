@@ -4,8 +4,10 @@ from .views import (
     AdminStationDetailView, AdminStationEditView, AdminStationDeleteView,
     AdminAmenitiesView, AdminAddAmenityView, AdminEditAmenityView, AdminDeleteAmenityView,
     AdminChargerTypesView, AdminAddChargerTypeView, AdminEditChargerTypeView, AdminDeleteChargerTypeView,
-    AdminShowroomsView, AdminAddShowroomView, AdminServiceCentersView,
-    AdminAddServiceCenterView, AdminUsersView, AdminAnalyticsView, AdminSettingsView
+    AdminShowroomsView, AdminAddShowroomView, AdminShowroomDetailView, AdminShowroomEditView, AdminShowroomDeleteView,
+    AdminServiceCentersView, AdminAddServiceCenterView, AdminServiceCenterDetailView, AdminServiceCenterEditView, AdminServiceCenterDeleteView,
+    AdminUsersView, AdminAnalyticsView, AdminSettingsView,
+    AdminBrandsView, AdminAddBrandView, AdminEditBrandView, AdminDeleteBrandView
 )
 
 urlpatterns = [
@@ -30,12 +32,25 @@ urlpatterns = [
     path('charger-types/', AdminChargerTypesView.as_view(), name='admin-charger-types'),
     path('charger-types/add/', AdminAddChargerTypeView.as_view(), name='admin-add-charger-type'),
     path('charger-types/<int:pk>/edit/', AdminEditChargerTypeView.as_view(), name='admin-charger-type-edit'),
+    path('charger-types/<int:pk>/edit/', AdminEditChargerTypeView.as_view(), name='admin-charger-type-edit'),
     path('charger-types/<int:pk>/delete/', AdminDeleteChargerTypeView.as_view(), name='admin-charger-type-delete'),
+
+    # Brands
+    path('brands/', AdminBrandsView.as_view(), name='admin-brands'),
+    path('brands/add/', AdminAddBrandView.as_view(), name='admin-add-brand'),
+    path('brands/<int:pk>/edit/', AdminEditBrandView.as_view(), name='admin-brand-edit'),
+    path('brands/<int:pk>/delete/', AdminDeleteBrandView.as_view(), name='admin-brand-delete'),
 
     path('showrooms/', AdminShowroomsView.as_view(), name='admin-showrooms'),
     path('showrooms/add/', AdminAddShowroomView.as_view(), name='admin-add-showroom'),
+    path('showrooms/<int:pk>/', AdminShowroomDetailView.as_view(), name='admin-showroom-detail'),
+    path('showrooms/<int:pk>/edit/', AdminShowroomEditView.as_view(), name='admin-showroom-edit'),
+    path('showrooms/<int:pk>/delete/', AdminShowroomDeleteView.as_view(), name='admin-showroom-delete'),
     path('service-centers/', AdminServiceCentersView.as_view(), name='admin-service-centers'),
     path('service-centers/add/', AdminAddServiceCenterView.as_view(), name='admin-add-service-center'),
+    path('service-centers/<int:pk>/', AdminServiceCenterDetailView.as_view(), name='admin-service-center-detail'),
+    path('service-centers/<int:pk>/edit/', AdminServiceCenterEditView.as_view(), name='admin-service-center-edit'),
+    path('service-centers/<int:pk>/delete/', AdminServiceCenterDeleteView.as_view(), name='admin-service-center-delete'),
     path('users/', AdminUsersView.as_view(), name='admin-users'),
     path('analytics/', AdminAnalyticsView.as_view(), name='admin-analytics'),
     path('settings/', AdminSettingsView.as_view(), name='admin-settings'),
