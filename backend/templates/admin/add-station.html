@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Station - ChargePoint Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'admin/css/style.css' %}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-light">
+    <div class="d-flex">
+        <div id="sidebar-container">
+            {% include 'admin/sidebar.html' %}
+        </div>
+        <main class="flex-grow-1 overflow-auto vh-100">
+            <header class="bg-white border-bottom px-4 py-3 sticky-top">
+                <div class="d-flex align-items-center gap-3">
+                    <a href="{% url 'admin-stations' %}" class="btn btn-light rounded-circle p-2">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </a>
+                    <div>
+                        <h4 class="fw-bold mb-0">Add New Station</h4>
+                        <p class="text-muted mb-0 small">Create a new charging station</p>
+                    </div>
+                </div>
+            </header>
+            <div class="p-4">
+                <form class="mx-auto" style="max-width: 900px;" data-success-url="{% url 'admin-stations' %}"
+                    onsubmit="event.preventDefault(); window.location.href=this.dataset.successUrl;">
+
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-4">Station Details</h5>
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label text-secondary fw-medium">Station Name</label>
+                                    <input type="text" class="form-control" placeholder="e.g. Downtown Fast Charge"
+                                        required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-secondary fw-medium">Operator</label>
+                                    <input type="text" class="form-control" id="form-operator"
+                                        placeholder="e.g. ChargePoint Network" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-secondary fw-medium">Status</label>
+                                    <select class="form-select">
+                                        <option value="ACTIVE">Active</option>
+                                        <option value="MAINTENANCE">Maintenance</option>
+                                        <option value="OFFLINE">Offline</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-secondary fw-medium">Opening Hours</label>
+                                    <input type="text" class="form-control" placeholder="e.g. 24/7">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-4">Location</h5>
+                            <div class="mb-3">
+                                <label class="form-label text-secondary fw-medium">Full Address</label>
+                                <textarea class="form-control" rows="2" placeholder="123 Main Street"></textarea>
+                            </div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label text-secondary fw-medium">City</label>
+                                    <input type="text" class="form-control" placeholder="e.g. Austin">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-secondary fw-medium">State</label>
+                                    <input type="text" class="form-control" placeholder="e.g. TX">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label text-secondary fw-medium">Zip Code</label>
+                                    <input type="text" class="form-control" placeholder="e.g. 78701">
+                                </div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-md-6"><label class="form-label">Latitude</label><input type="number"
+                                        step="any" class="form-control"></div>
+                                <div class="col-md-6"><label class="form-label">Longitude</label><input type="number"
+                                        step="any" class="form-control"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm rounded-4 mb-4" id="charger-config-section">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <h5 class="fw-bold mb-0">Charger Configuration</h5>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="addChargerRow()">+ Add Unit Type</button>
+                            </div>
+                            <div id="charger-rows-container">
+                                <div class="row g-3 mb-3 border-bottom pb-3 charger-row">
+                                    <div class="col-md-4">
+                                        <label class="form-label text-secondary small">Charger Type</label>
+                                        <select class="form-select form-select-sm charger-type-select"></select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label text-secondary small">Start Price</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label text-secondary small">End Price</label>
+                                        <div class="input-group input-group-sm">
+                                            <span class="input-group-text">$</span>
+                                            <input type="number" class="form-control" placeholder="0.00">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2 d-flex align-items-end">
+                                        <button type="button" class="btn btn-sm btn-light text-danger w-100"
+                                            onclick="this.closest('.charger-row').remove()"><i data-lucide="trash-2"
+                                                class="w-4 h-4"></i></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-body p-4">
+                            <h5 class="fw-bold mb-3">Amenities</h5>
+                            <div class="row g-3" id="amenities-container"></div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 pb-5">
+                        <a href="{% url 'admin-stations' %}" class="btn btn-light flex-grow-1 py-3 fw-bold">Cancel</a>
+                        <button type="submit" class="btn btn-emerald text-white flex-grow-1 py-3 fw-bold">Create
+                            Station</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+    <script src="{% static 'admin/js/add-station.js' %}"></script>
+</body>
+
+</html>

@@ -1,0 +1,77 @@
+<aside class="d-flex flex-column flex-shrink-0 p-3 text-white bg-dark sticky-top vh-100" style="width: 260px;">
+    <div class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none px-2">
+        <div class="bg-emerald rounded-3 p-2 me-3 d-flex align-items-center justify-content-center">
+            <i data-lucide="zap" class="text-white"></i>
+        </div>
+        <div>
+            <h5 class="fw-bold mb-0">ChargePoint</h5>
+            <small class="text-muted">Admin Portal</small>
+        </div>
+    </div>
+    <hr>
+    <ul class="nav nav-pills flex-column mb-auto" id="sidebar-nav">
+        <li class="nav-item">
+            <a href="{% url 'admin-dashboard' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'admin-dashboard' %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
+                <i data-lucide="home" class="w-5 h-5"></i> Dashboard
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'admin-stations' %}"
+                class="nav-link {% if 'admin-stations' in request.resolver_match.url_name or 'admin-add-station' in request.resolver_match.url_name %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
+                <i data-lucide="plug" class="w-5 h-5"></i> Stations
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'admin-showrooms' %}"
+                class="nav-link {% if 'admin-showrooms' in request.resolver_match.url_name or 'admin-add-showroom' in request.resolver_match.url_name %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
+                <i data-lucide="car" class="w-5 h-5"></i> Showrooms
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'admin-service-centers' %}"
+                class="nav-link {% if 'admin-service-centers' in request.resolver_match.url_name or 'admin-add-service-center' in request.resolver_match.url_name %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
+                <i data-lucide="wrench" class="w-5 h-5"></i> Service Centers
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'admin-users' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'admin-users' %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
+                <i data-lucide="users" class="w-5 h-5"></i> Users
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'admin-analytics' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'admin-analytics' %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
+                <i data-lucide="bar-chart-3" class="w-5 h-5"></i> Analytics
+            </a>
+        </li>
+        <li>
+            <a href="{% url 'admin-settings' %}"
+                class="nav-link {% if request.resolver_match.url_name == 'admin-settings' %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
+                <i data-lucide="settings" class="w-5 h-5"></i> Settings
+            </a>
+        </li>
+    </ul>
+    <hr>
+    <div class="dropdown px-2">
+        <div class="d-flex align-items-center gap-3">
+            <div class="rounded-circle bg-emerald d-flex align-items-center justify-content-center fw-bold"
+                style="width: 40px; height: 40px;">AU</div>
+            <div class="flex-grow-1 overflow-hidden">
+                <div class="fw-bold text-truncate" id="user-name">Admin User</div>
+                <div class="small text-muted text-truncate" id="user-email">admin@example.com</div>
+            </div>
+        </div>
+        <a href="{% url 'admin-login' %}"
+            class="btn btn-link text-secondary text-decoration-none p-0 mt-3 d-flex align-items-center gap-2 w-100 hover-danger">
+            <i data-lucide="log-out" class="w-5 h-5"></i> Logout
+        </a>
+    </div>
+</aside>
+
+<script>
+    if (typeof lucide !== 'undefined') {
+        lucide.createIcons();
+    }
+</script>

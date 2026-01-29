@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service Centers - ChargePoint Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'admin/css/style.css' %}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-light">
+    <div class="d-flex">
+        <div id="sidebar-container">
+            {% include 'admin/sidebar.html' %}
+        </div>
+        <main class="flex-grow-1 overflow-auto vh-100">
+            <header class="bg-white border-bottom px-4 py-3 sticky-top">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="fw-bold mb-0">Service Management</h4>
+                        <p class="text-muted mb-0 small">Manage service centers</p>
+                    </div>
+                    <a href="{% url 'admin-add-service-center' %}"
+                        class="btn btn-emerald text-white fw-bold d-flex align-items-center gap-2">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add Service Center
+                    </a>
+                </div>
+            </header>
+            <div class="p-4">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body border-bottom p-4">
+                        <div class="row g-3">
+                            <div class="col-md-9">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i data-lucide="search"
+                                            class="w-4 h-4 text-muted"></i></span>
+                                    <input type="text" class="form-control border-start-0 ps-0"
+                                        placeholder="Search service centers...">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select">
+                                    <option value="all">All Status</option>
+                                    <option value="active">Active</option>
+                                    <option value="busy">Busy</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="px-4 py-3 text-secondary text-uppercase small">Center</th>
+                                    <th class="px-4 py-3 text-secondary text-uppercase small">Location</th>
+                                    <th class="px-4 py-3 text-secondary text-uppercase small">Contact</th>
+                                    <th class="px-4 py-3 text-secondary text-uppercase small">Hours</th>
+                                    <th class="px-4 py-3 text-secondary text-uppercase small">Status</th>
+                                    <th class="px-4 py-3 text-secondary text-uppercase small">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="service-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="{% static 'admin/js/data.js' %}"></script>
+    <script src="{% static 'admin/js/service-centers.js' %}"></script>
+</body>
+
+</html>
