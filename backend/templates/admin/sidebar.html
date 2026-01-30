@@ -5,7 +5,7 @@
         </div>
         <div>
             <h5 class="fw-bold mb-0">ChargePoint</h5>
-            <small class="text-muted">Admin Portal</small>
+            <small class="fw-bold">Admin Portal</small>
         </div>
     </div>
     <hr>
@@ -38,12 +38,6 @@
             <a href="{% url 'admin-users' %}"
                 class="nav-link {% if request.resolver_match.url_name == 'admin-users' %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
                 <i data-lucide="users" class="w-5 h-5"></i> Users
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'admin-analytics' %}"
-                class="nav-link {% if request.resolver_match.url_name == 'admin-analytics' %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
-                <i data-lucide="bar-chart-3" class="w-5 h-5"></i> Analytics
             </a>
         </li>
         <li>
@@ -80,8 +74,8 @@
             <div class="rounded-circle bg-emerald d-flex align-items-center justify-content-center fw-bold"
                 style="width: 40px; height: 40px;">{{ user.username|slice:":2"|upper }}</div>
             <div class="flex-grow-1 overflow-hidden">
-                <div class="fw-bold text-truncate" id="user-name">{{ user.username }}</div>
-                <div class="small text-muted text-truncate" id="user-email">{{ user.email }}</div>
+                <div class="fw-bold text-truncate" id="user-name">{{ user.full_name }}</div>
+                <div class="small text-truncate" id="user-email">{{ user.email }}</div>
             </div>
         </div>
         <a href="{% url 'admin-logout' %}"

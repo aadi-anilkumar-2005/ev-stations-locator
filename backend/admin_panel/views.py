@@ -27,6 +27,80 @@ class AdminLogoutView(LogoutView):
 class AdminDashboardView(AdminRequiredMixin, TemplateView):
     template_name = 'admin/dashboard.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from stations.models import Station, Showroom, ServiceCenter
+        from django.contrib.auth import get_user_model
+        from django.db.models import Count, Q
+        
+        User = get_user_model()
+        
+        # 1. Totals
+        total_stations = Station.objects.count()
+        total_users = User.objects.count()
+        total_showrooms = Showroom.objects.count()
+        total_service = ServiceCenter.objects.count()
+        
+        context['stats'] = {
+            'total_stations': total_stations,
+            'total_users': total_users,
+            'total_locations': total_showrooms + total_service,
+            'active_stations': Station.objects.filter(status='active').count()
+        }
+        
+        # 2. Status Chart Data (Active vs Maintenance vs Offline)
+        # Getting counts for each status
+        status_counts = Station.objects.values('status').annotate(count=Count('status'))
+        # Format for template: [{'status': 'active', 'count': 10, 'percentage': 50}, ...]
+        formatted_status = []
+        for item in status_counts:
+            count = item['count']
+            percentage = (count / total_stations * 100) if total_stations > 0 else 0
+            formatted_status.append({
+                'status': item['status'],
+                'count': count,
+                'percentage': round(percentage, 1),
+                'color': self._get_status_color(item['status'])
+            })
+        context['station_status'] = formatted_status
+
+        # 3. Recent Activity (Users and Stations)
+        # Fetch last 5 users and last 5 stations, combine and sort
+        recent_users = User.objects.order_by('-date_joined')[:5]
+        recent_stations = Station.objects.order_by('-created_at')[:5]
+        
+        activity = []
+        for user in recent_users:
+            activity.append({
+                'type': 'New User',
+                'desc': f"{user.username} joined the platform",
+                'time': user.date_joined,
+                'icon': 'user-plus',
+                'color': 'text-primary',
+                'bg': 'bg-primary-subtle'
+            })
+            
+        for station in recent_stations:
+            activity.append({
+                'type': 'New Station',
+                'desc': f"{station.name} was added",
+                'time': station.created_at,
+                'icon': 'zap',
+                'color': 'text-emerald',
+                'bg': 'bg-emerald-subtle'
+            })
+            
+        # Sort combined list by time descending and take top 5
+        activity.sort(key=lambda x: x['time'], reverse=True)
+        context['recent_activity'] = activity[:8]
+        
+        return context
+
+    def _get_status_color(self, status):
+        if status == 'active': return 'bg-emerald'
+        if status == 'maintenance': return 'bg-warning'
+        return 'bg-secondary'
+
 class AdminStationsView(AdminRequiredMixin, TemplateView):
     template_name = 'admin/stations.html'
 
@@ -611,11 +685,214 @@ class AdminServiceCenterDeleteView(AdminRequiredMixin, DeleteView):
     def get(self, request, *args, **kwargs):
         return redirect(self.success_url)
 
-class AdminUsersView(AdminRequiredMixin, TemplateView):
+class AdminUsersView(AdminRequiredMixin, ListView):
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    model = User
     template_name = 'admin/users.html'
+    context_object_name = 'users'
+    paginate_by = 10
+    ordering = ['-date_joined']
 
-class AdminAnalyticsView(AdminRequiredMixin, TemplateView):
-    template_name = 'admin/analytics.html'
+    def get_queryset(self):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        queryset = User.objects.select_related('profile').all().order_by('-date_joined')
+        
+        # Search
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            queryset = queryset.filter(
+                username__icontains=search_query
+            ) | queryset.filter(
+                email__icontains=search_query
+            ) | queryset.filter(
+                full_name__icontains=search_query
+            )
+            
+        # Filter by Status
+        status_filter = self.request.GET.get('status', 'all')
+        if status_filter == 'active':
+            queryset = queryset.filter(is_active=True)
+        elif status_filter == 'inactive':
+            queryset = queryset.filter(is_active=False)
+            
+        return queryset
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        
+        # Stats
+        total_users = User.objects.count()
+        active_users = User.objects.filter(is_active=True).count()
+        inactive_users = total_users - active_users
+        
+        context['stats'] = {
+            'total': total_users,
+            'active': active_users,
+            'inactive': inactive_users,
+            'new_this_month': User.objects.filter(date_joined__month=7).count() # Placeholder logic for "New"
+        }
+        return context
+
+class AdminAddUserView(AdminRequiredMixin, CreateView):
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    model = User
+    template_name = 'admin/add-user.html'
+    fields = ['full_name', 'email', 'is_active', 'is_staff']
+    success_url = reverse_lazy('admin-users')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_edit'] = False
+        return context
+    
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        # Auto-generate username from email if not present (since we removed the field)
+        # AbstractUser requires username
+        if not user.username:
+            import uuid
+            # Strategy: Use email prefix + random string to ensure uniqueness
+            base_username = user.email.split('@')[0]
+            user.username = f"{base_username}_{uuid.uuid4().hex[:8]}"
+            
+        password = self.request.POST.get('password')
+        if password:
+            user.set_password(password)
+        else:
+            # Set unuable password if missing. 
+            pass 
+        user.save()
+
+        # Save/Update UserProfile with phone number
+        phone_number = self.request.POST.get('phone_number')
+        if phone_number:
+            from users.models import UserProfile
+            UserProfile.objects.update_or_create(user=user, defaults={'phone_number': phone_number})
+            
+        return redirect(self.success_url)
+
+class AdminEditUserView(AdminRequiredMixin, UpdateView):
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    model = User
+    template_name = 'admin/add-user.html'
+    fields = ['full_name', 'email', 'is_active', 'is_staff']
+    success_url = reverse_lazy('admin-users')
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['is_edit'] = True
+        
+        # Pre-fill phone number from profile
+        user = self.get_object()
+        if hasattr(user, 'profile'):
+            context['phone_number'] = user.profile.phone_number
+            
+        return context
+
+    def form_valid(self, form):
+        user = form.save(commit=False)
+        password = self.request.POST.get('password')
+        if password:
+            user.set_password(password)
+        user.save()
+
+        # Update UserProfile
+        phone_number = self.request.POST.get('phone_number')
+        from users.models import UserProfile
+        # use update_or_create to handle cases where profile might be missing
+        UserProfile.objects.update_or_create(
+            user=user, 
+            defaults={'phone_number': phone_number}
+        )
+        
+        return redirect(self.success_url)
+
+class AdminDeleteUserView(AdminRequiredMixin, DeleteView):
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    model = User
+    success_url = reverse_lazy('admin-users')
+
+    # Removed GET override to enforce standard POST-only deletion
+    # If accessed via GET, it will return 405 (Method Not Allowed) or show confirm template if configured,
+    # but our frontend now handles confirmation and sends POST.
 
 class AdminSettingsView(AdminRequiredMixin, TemplateView):
     template_name = 'admin/settings.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        
+        # Ensure related objects exist (lazy creation)
+        from users.models import UserProfile, UserPreferences, UserNotificationSettings
+        
+        UserProfile.objects.get_or_create(user=user)
+        UserPreferences.objects.get_or_create(user=user)
+        UserNotificationSettings.objects.get_or_create(user=user)
+        
+        context['user'] = user
+        # Access related objects directly in template via user.profile, user.preferences, etc.
+        # But we can pass them explicitly if needed or confirming they exist triggers the refresh
+        
+        return context
+
+    def post(self, request, *args, **kwargs):
+        user = request.user
+        from django.contrib import messages
+        from django.contrib.auth import update_session_auth_hash
+        from users.models import UserProfile, UserPreferences, UserNotificationSettings
+
+        action = request.POST.get('action')
+
+        try:
+            if action == 'update_profile':
+                user.full_name = request.POST.get('full_name', '')
+                user.email = request.POST.get('email', '')
+                user.save()
+
+                profile, _ = UserProfile.objects.get_or_create(user=user)
+                profile.phone_number = request.POST.get('phone_number', '')
+                profile.save()
+                messages.success(request, 'Profile updated successfully.')
+
+            elif action == 'change_password':
+                current_password = request.POST.get('current_password')
+                new_password = request.POST.get('new_password')
+                confirm_password = request.POST.get('confirm_password')
+
+                if not user.check_password(current_password):
+                    messages.error(request, 'Incorrect current password.')
+                elif new_password != confirm_password:
+                    messages.error(request, 'New passwords do not match.')
+                else:
+                    user.set_password(new_password)
+                    user.save()
+                    update_session_auth_hash(request, user) # Keep user logged in
+                    messages.success(request, 'Password changed successfully.')
+
+            elif action == 'update_notifications':
+                notifications, _ = UserNotificationSettings.objects.get_or_create(user=user)
+                notifications.notify_charging_updates = request.POST.get('notify_charging_updates') == 'on'
+                notifications.notify_station_alerts = request.POST.get('notify_station_alerts') == 'on'
+                notifications.notify_promotional_offers = request.POST.get('notify_promotional_offers') == 'on'
+                notifications.notify_app_updates = request.POST.get('notify_app_updates') == 'on'
+                notifications.save()
+                messages.success(request, 'Notification settings updated.')
+
+            elif action == 'update_preferences': # Example for preferences if we add that tab
+                preferences, _ = UserPreferences.objects.get_or_create(user=user)
+                # preferences.is_dark_mode = request.POST.get('is_dark_mode') == 'on'
+                # preferences.save()
+                pass
+
+        except Exception as e:
+            messages.error(request, f'An error occurred: {str(e)}')
+        
+        return redirect('admin-settings')

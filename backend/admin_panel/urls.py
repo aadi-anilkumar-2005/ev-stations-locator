@@ -6,7 +6,7 @@ from .views import (
     AdminChargerTypesView, AdminAddChargerTypeView, AdminEditChargerTypeView, AdminDeleteChargerTypeView,
     AdminShowroomsView, AdminAddShowroomView, AdminShowroomDetailView, AdminShowroomEditView, AdminShowroomDeleteView,
     AdminServiceCentersView, AdminAddServiceCenterView, AdminServiceCenterDetailView, AdminServiceCenterEditView, AdminServiceCenterDeleteView,
-    AdminUsersView, AdminAnalyticsView, AdminSettingsView,
+    AdminUsersView, AdminAddUserView, AdminEditUserView, AdminDeleteUserView, AdminSettingsView,
     AdminBrandsView, AdminAddBrandView, AdminEditBrandView, AdminDeleteBrandView
 )
 
@@ -51,7 +51,10 @@ urlpatterns = [
     path('service-centers/<int:pk>/', AdminServiceCenterDetailView.as_view(), name='admin-service-center-detail'),
     path('service-centers/<int:pk>/edit/', AdminServiceCenterEditView.as_view(), name='admin-service-center-edit'),
     path('service-centers/<int:pk>/delete/', AdminServiceCenterDeleteView.as_view(), name='admin-service-center-delete'),
+    # Users
     path('users/', AdminUsersView.as_view(), name='admin-users'),
-    path('analytics/', AdminAnalyticsView.as_view(), name='admin-analytics'),
+    path('users/add/', AdminAddUserView.as_view(), name='admin-add-user'),
+    path('users/<int:pk>/edit/', AdminEditUserView.as_view(), name='admin-user-edit'),
+    path('users/<int:pk>/delete/', AdminDeleteUserView.as_view(), name='admin-user-delete'),
     path('settings/', AdminSettingsView.as_view(), name='admin-settings'),
 ]
