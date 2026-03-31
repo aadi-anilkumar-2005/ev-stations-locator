@@ -331,7 +331,7 @@ export default function FiltersScreen() {
             <Text style={[styles.sectionTitle, { color: colors.text }]}>
               Price Range
             </Text>
-            <Text style={styles.priceValue}>$0.20 - $0.40/kWh</Text>
+            <Text style={styles.priceValue}>₹0.20 - ₹0.40/kWh</Text>
           </View>
           <View style={styles.priceInputs}>
             <TextInput

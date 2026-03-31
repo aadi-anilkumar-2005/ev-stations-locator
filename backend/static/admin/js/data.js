@@ -17,9 +17,9 @@ const data = {
         { icon: 'check-circle', type: 'Update completed', desc: 'All stations firmware v2.4.1', time: '1d ago', iconColor: 'text-primary', iconBg: 'bg-primary-subtle' }
     ],
     stations: [
-        { id: '1', name: 'Downtown Fast Charge', code: '#ST-001', loc: '123 Main St', city: 'Downtown', operator: 'Tesla', type: 'DC Fast', status: 'active', avail: '4/8', price: '$0.28', icon: 'zap' },
-        { id: '2', name: 'Midtown Plaza', code: '#ST-002', loc: '456 Oak Ave', city: 'Midtown', operator: 'ChargePoint', type: 'Level 2', status: 'active', avail: '2/4', price: '$0.32', icon: 'plug' },
-        { id: '3', name: 'Uptown Hub', code: '#ST-003', loc: '789 Pine St', city: 'Uptown', operator: 'EVgo', type: 'DC Fast', status: 'maintenance', avail: '0/6', price: '$0.35', icon: 'zap' }
+        { id: '1', name: 'Downtown Fast Charge', code: '#ST-001', loc: '123 Main St', city: 'Downtown', operator: 'Tesla', type: 'DC Fast', status: 'active', avail: '4/8', price: '₹0.28', icon: 'zap' },
+        { id: '2', name: 'Midtown Plaza', code: '#ST-002', loc: '456 Oak Ave', city: 'Midtown', operator: 'ChargePoint', type: 'Level 2', status: 'active', avail: '2/4', price: '₹0.32', icon: 'plug' },
+        { id: '3', name: 'Uptown Hub', code: '#ST-003', loc: '789 Pine St', city: 'Uptown', operator: 'EVgo', type: 'DC Fast', status: 'maintenance', avail: '0/6', price: '₹0.35', icon: 'zap' }
     ],
     showrooms: [
         { id: '1', name: 'Tesla Gallery', code: '#SH-001', loc: '88 Fashion Valley', city: 'San Diego', brand: 'Tesla', phone: '+1 (619) 555-0100', hours: 'Mon-Sat 10:00-20:00', status: 'active' },

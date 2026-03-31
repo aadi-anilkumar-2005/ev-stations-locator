@@ -64,7 +64,7 @@ export default function RegisterScreen() {
           <Text style={styles.label}>Phone Number</Text>
           <TextInput
             style={styles.input}
-            placeholder="+1 (555) 000-0000"
+            placeholder="+91 xxxxx xxxxx"
             keyboardType="phone-pad"
             value={formData.phone_number}
             onChangeText={(text) =>

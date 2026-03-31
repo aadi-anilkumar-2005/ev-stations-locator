@@ -53,10 +53,10 @@
                                 <div class="col-md-6">
                                     <label class="form-label text-secondary fw-medium">Status</label>
                                     <select class="form-select" name="status">
-                                        <option value="active" {% if station.status == "active" %}selected{% endif %}>
+                                        <option value="active" {% if station.status=="active" %}selected{% endif %}>
                                             Active</option>
-                                        <option value="maintenance" {% if station.status == "maintenance" %}selected{%endif %}>Maintenance</option>
-                                        <option value="offline" {% if station.status == "offline" %}selected{% endif %}>
+                                        <option value="maintenance" {% if station.status=="maintenance" %}selected{%endif %}>Maintenance</option>
+                                        <option value="offline" {% if station.status=="offline" %}selected{% endif %}>
                                             Offline</option>
                                     </select>
                                 </div>
@@ -96,7 +96,7 @@
                             </div>
                             <div class="row g-3">
                                 {% if station and station.address %}
-                                {% include 'admin/includes/location_picker.html' with latitude=station.address.latitude|default:'' longitude=station.address.longitude|default:'' %}
+                                {% include 'admin/includes/location_picker.html' withlatitude=station.address.latitude|default:'' longitude=station.address.longitude|default:'' %}
                                 {% else %}
                                 {% include 'admin/includes/location_picker.html' with latitude='' longitude='' %}
                                 {% endif %}
@@ -120,14 +120,15 @@
                                         <select class="form-select form-select-sm charger-type-select"
                                             name="charger_types[]">
                                             {% for ct in charger_types %}
-                                            <option value="{{ ct.id }}" {% if ct.id == charger.charger_type.id %}selected{% endif %}>{{ ct.name }}</option>
+                                            <option value="{{ ct.id }}" {% if ct.id==charger.charger_type.id
+                                                %}selected{% endif %}>{{ ct.name }}</option>
                                             {% endfor %}
                                         </select>
                                     </div>
                                     <div class="col-md-3">
                                         <label class="form-label text-secondary small">Start Price</label>
                                         <div class="input-group input-group-sm">
-                                            <span class="input-group-text">$</span>
+                                            <span class="input-group-text">₹</span>
                                             <input type="number" step="0.01" class="form-control" name="start_prices[]"
                                                 placeholder="0.00" value="{{ charger.start_price }}">
                                         </div>
@@ -135,7 +136,7 @@
                                     <div class="col-md-3">
                                         <label class="form-label text-secondary small">End Price</label>
                                         <div class="input-group input-group-sm">
-                                            <span class="input-group-text">$</span>
+                                            <span class="input-group-text">₹</span>
                                             <input type="number" step="0.01" class="form-control" name="end_prices[]"
                                                 placeholder="0.00" value="{{ charger.end_price }}">
                                         </div>
@@ -161,7 +162,7 @@
                                     <div class="col-md-3">
                                         <label class="form-label text-secondary small">Start Price</label>
                                         <div class="input-group input-group-sm">
-                                            <span class="input-group-text">$</span>
+                                            <span class="input-group-text">₹</span>
                                             <input type="number" step="0.01" class="form-control" name="start_prices[]"
                                                 placeholder="0.00">
                                         </div>
@@ -169,7 +170,7 @@
                                     <div class="col-md-3">
                                         <label class="form-label text-secondary small">End Price</label>
                                         <div class="input-group input-group-sm">
-                                            <span class="input-group-text">$</span>
+                                            <span class="input-group-text">₹</span>
                                             <input type="number" step="0.01" class="form-control" name="end_prices[]"
                                                 placeholder="0.00">
                                         </div>
@@ -198,7 +199,7 @@
                                 <div class="col-md-3">
                                     <label class="form-label text-secondary small">Start Price</label>
                                     <div class="input-group input-group-sm">
-                                        <span class="input-group-text">$</span>
+                                        <span class="input-group-text">₹</span>
                                         <input type="number" step="0.01" class="form-control" name="start_prices[]"
                                             placeholder="0.00">
                                     </div>
@@ -206,7 +207,7 @@
                                 <div class="col-md-3">
                                     <label class="form-label text-secondary small">End Price</label>
                                     <div class="input-group input-group-sm">
-                                        <span class="input-group-text">$</span>
+                                        <span class="input-group-text">₹</span>
                                         <input type="number" step="0.01" class="form-control" name="end_prices[]"
                                             placeholder="0.00">
                                     </div>
@@ -228,7 +229,8 @@
                                 <div class="col-6 col-md-4">
                                     <div class="form-check p-2 border rounded-3 bg-white h-100">
                                         <input class="form-check-input" type="checkbox" id="am-{{ amenity.id }}"
-                                            name="amenities" value="{{ amenity.id }}" {% if amenity.id in selected_amenities %}checked{% endif %}>
+                                            name="amenities" value="{{ amenity.id }}" {% if amenity.id in
+                                            selected_amenities %}checked{% endif %}>
                                         <label class="form-check-label d-flex align-items-center gap-2 small"
                                             for="am-{{ amenity.id }}">
                                             <i data-lucide="check-circle" class="w-4 h-4 text-emerald"></i> {{ amenity.name }}
