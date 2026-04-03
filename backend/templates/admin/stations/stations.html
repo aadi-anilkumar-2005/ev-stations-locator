@@ -112,7 +112,7 @@
                                     <td class="px-4 py-3">
                                         {% with charger=station.station_chargers.first %}
                                         {% if charger %}
-                                        ${{ charger.start_price }} - ${{ charger.end_price }}/kWh
+                                        ₹{{ charger.start_price }} - ₹{{ charger.end_price }}/kWh
                                         {% else %}
                                         -
                                         {% endif %}

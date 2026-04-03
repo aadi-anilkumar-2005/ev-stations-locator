@@ -9,10 +9,12 @@ from .models import User
 from .serializers import UserSerializer, RegisterSerializer, ChangePasswordSerializer, ResetPasswordSerializer, EmailTokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 
+
 class RegisterView(generics.CreateAPIView):
     queryset = UserSerializer.Meta.model.objects.all()
     permission_classes = (permissions.AllowAny,)
     serializer_class = RegisterSerializer
+
 
 class ProfileView(generics.RetrieveUpdateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
@@ -21,62 +23,77 @@ class ProfileView(generics.RetrieveUpdateAPIView):
     def get_object(self):
         return self.request.user
 
+
 class LogoutView(APIView):
     permission_classes = (permissions.AllowAny,)
 
-    def post(self, request):
+    def _logout(self, request):
         try:
-            refresh_token = request.data["refresh"]
+            refresh_token = request.data.get("refresh")
+            if not refresh_token:
+                return Response({"detail": "Refresh token required."}, status=status.HTTP_400_BAD_REQUEST)
+
             token = RefreshToken(refresh_token)
             token.blacklist()
             return Response(status=status.HTTP_205_RESET_CONTENT)
-        except Exception as e:
+        except Exception:
             return Response(status=status.HTTP_400_BAD_REQUEST)
+
+    def post(self, request):
+        return self._logout(request)
+
+    def get(self, request):
+        return Response({"detail": "Please logout via POST with refresh token."}, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class ForgotPasswordView(APIView):
     permission_classes = (permissions.AllowAny,)
-    
+
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
         if serializer.is_valid():
-            # In a real app, send email here. 
+            # In a real app, send email here.
             # For demo, just return success.
             return Response({"message": "Password reset link sent to email."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class ResetPasswordView(APIView):
     permission_classes = (permissions.AllowAny,)
-    
+
     def post(self, request):
         # Taking a shortcut here since exact "token" flow needs email linkage.
         # We'll assume this verifies the token and sets new password.
         # For simplicity in this dummy backend, we'll just say "Done".
         return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
 
+
 class LocationUpdateView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
-    
+
     def post(self, request):
         lat = request.data.get('latitude')
         lng = request.data.get('longitude')
-        
+
         if lat is None or lng is None:
             return Response({"error": "Latitude and Longitude required"}, status=status.HTTP_400_BAD_REQUEST)
-            
+
         user = request.user
         # Update or create UserLocation
         from .models import UserLocation
-        loc, created = UserLocation.objects.get_or_create(user=user, defaults={'latitude': lat, 'longitude': lng})
+        loc, created = UserLocation.objects.get_or_create(
+            user=user, defaults={'latitude': lat, 'longitude': lng})
         if not created:
             loc.latitude = lat
             loc.longitude = lng
             loc.save()
-        
+
         return Response({"status": "Location updated"}, status=status.HTTP_200_OK)
+
 
 class LocationCurrentView(APIView):
     permission_classes = (permissions.IsAuthenticated,)
-    
+
     def get(self, request):
         user = request.user
         try:
@@ -87,7 +104,7 @@ class LocationCurrentView(APIView):
                 "last_update": loc.updated_at
             })
         except AttributeError:
-             return Response({
+            return Response({
                 "latitude": None,
                 "longitude": None,
                 "last_update": None
@@ -96,5 +113,3 @@ class LocationCurrentView(APIView):
 
 class EmailTokenObtainPairView(TokenObtainPairView):
     serializer_class = EmailTokenObtainPairSerializer
-
-

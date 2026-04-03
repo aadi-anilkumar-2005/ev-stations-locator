@@ -1,104 +1,107 @@
 <form class="mx-auto" style="max-width: 900px;" onsubmit="event.preventDefault(); navigateTo('stations');">
-                            
-                            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                                <div class="card-body p-4">
-                                    <h5 class="fw-bold mb-4">General Information</h5>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label text-secondary fw-medium">Station Name</label>
-                                            <input type="text" class="form-control" placeholder="e.g. Downtown Fast Charge" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label text-secondary fw-medium">Station Type</label>
-                                            <select class="form-select" id="form-place-type" onchange="toggleChargerFields()">
-                                                <option value="CHARGING">Charging Station</option>
-                                                <option value="SHOWROOM">Showroom</option>
-                                                <option value="SERVICE">Service Shop</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label text-secondary fw-medium">Operator</label>
-                                            <select class="form-select" id="form-operator">
-                                                </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label text-secondary fw-medium">Status</label>
-                                            <select class="form-select">
-                                                <option value="ACTIVE">Active</option>
-                                                <option value="MAINTENANCE">Maintenance</option>
-                                                <option value="OFFLINE">Offline</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-12">
-                                            <label class="form-label text-secondary fw-medium">Opening Hours</label>
-                                            <input type="text" class="form-control" placeholder="e.g. 24/7 or Mon-Fri 09:00-18:00">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                                <div class="card-body p-4">
-                                    <h5 class="fw-bold mb-4">Location</h5>
-                                    <div class="mb-3">
-                                        <label class="form-label text-secondary fw-medium">Full Address</label>
-                                        <textarea class="form-control" rows="2" placeholder="123 Main Street, City, State"></textarea>
-                                    </div>
-                                    <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label text-secondary fw-medium">Latitude</label>
-                                            <input type="number" step="any" class="form-control" placeholder="37.7749">
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label class="form-label text-secondary fw-medium">Longitude</label>
-                                            <input type="number" step="any" class="form-control" placeholder="-122.4194">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div class="card border-0 shadow-sm rounded-4 mb-4" id="charger-config-section">
-                                <div class="card-body p-4">
-                                    <div class="d-flex justify-content-between align-items-center mb-4">
-                                        <h5 class="fw-bold mb-0">Charger Configuration</h5>
-                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addChargerRow()">+ Add Unit Type</button>
-                                    </div>
-                                    <div id="charger-rows-container">
-                                        <div class="row g-3 mb-3 border-bottom pb-3 charger-row">
-                                            <div class="col-md-4">
-                                                <label class="form-label text-secondary small">Charger Type</label>
-                                                <select class="form-select form-select-sm charger-type-select">
-                                                    </select>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label text-secondary small">Price (Start/End)</label>
-                                                <div class="input-group input-group-sm">
-                                                    <span class="input-group-text">$</span>
-                                                    <input type="number" class="form-control" placeholder="0.00">
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label text-secondary small">Unit Count</label>
-                                                <input type="number" class="form-control form-control-sm" value="1">
-                                            </div>
-                                            <div class="col-md-2 d-flex align-items-end">
-                                                <button type="button" class="btn btn-sm btn-light text-danger w-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-4">General Information</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-secondary fw-medium">Station Name</label>
+                    <input type="text" class="form-control" placeholder="e.g. Downtown Fast Charge" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-secondary fw-medium">Station Type</label>
+                    <select class="form-select" id="form-place-type" onchange="toggleChargerFields()">
+                        <option value="CHARGING">Charging Station</option>
+                        <option value="SHOWROOM">Showroom</option>
+                        <option value="SERVICE">Service Shop</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-secondary fw-medium">Operator</label>
+                    <select class="form-select" id="form-operator">
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-secondary fw-medium">Status</label>
+                    <select class="form-select">
+                        <option value="ACTIVE">Active</option>
+                        <option value="MAINTENANCE">Maintenance</option>
+                        <option value="OFFLINE">Offline</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label text-secondary fw-medium">Opening Hours</label>
+                    <input type="text" class="form-control" placeholder="e.g. 24/7 or Mon-Fri 09:00-18:00">
+                </div>
+            </div>
+        </div>
+    </div>
 
-                            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                                <div class="card-body p-4">
-                                    <h5 class="fw-bold mb-3">Amenities</h5>
-                                    <div class="row g-3" id="amenities-container">
-                                        </div>
-                                </div>
-                            </div>
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-4">Location</h5>
+            <div class="mb-3">
+                <label class="form-label text-secondary fw-medium">Full Address</label>
+                <textarea class="form-control" rows="2" placeholder="123 Main Street, City, State"></textarea>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label text-secondary fw-medium">Latitude</label>
+                    <input type="number" step="any" class="form-control" placeholder="37.7749">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label text-secondary fw-medium">Longitude</label>
+                    <input type="number" step="any" class="form-control" placeholder="-122.4194">
+                </div>
+            </div>
+        </div>
+    </div>
 
-                            <div class="d-flex gap-3 pb-5">
-                                <button type="button" class="btn btn-light flex-grow-1 py-3 fw-bold" onclick="navigateTo('stations')">Cancel</button>
-                                <button type="submit" class="btn btn-emerald text-white flex-grow-1 py-3 fw-bold">Create Place</button>
-                            </div>
-                        </form>
+    <div class="card border-0 shadow-sm rounded-4 mb-4" id="charger-config-section">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">Charger Configuration</h5>
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="addChargerRow()">+ Add Unit
+                    Type</button>
+            </div>
+            <div id="charger-rows-container">
+                <div class="row g-3 mb-3 border-bottom pb-3 charger-row">
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary small">Charger Type</label>
+                        <select class="form-select form-select-sm charger-type-select">
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-secondary small">Price (Start/End)</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">₹</span>
+                            <input type="number" class="form-control" placeholder="0.00">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label text-secondary small">Unit Count</label>
+                        <input type="number" class="form-control form-control-sm" value="1">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="button" class="btn btn-sm btn-light text-danger w-100"><i data-lucide="trash-2"
+                                class="w-4 h-4"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3">Amenities</h5>
+            <div class="row g-3" id="amenities-container">
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-3 pb-5">
+        <button type="button" class="btn btn-light flex-grow-1 py-3 fw-bold"
+            onclick="navigateTo('stations')">Cancel</button>
+        <button type="submit" class="btn btn-emerald text-white flex-grow-1 py-3 fw-bold">Create Place</button>
+    </div>
+</form>
