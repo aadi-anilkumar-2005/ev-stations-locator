@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'users',
     'stations',
     'admin_panel',
+    'service_center',
 ]
 
 MIDDLEWARE = [

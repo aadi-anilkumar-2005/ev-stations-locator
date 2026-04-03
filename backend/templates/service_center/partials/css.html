@@ -1,0 +1,183 @@
+<style>
+    :root {
+        --sidebar-width: 280px;
+        --primary-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        --sidebar-bg: #0f172a;
+        --sidebar-hover: #1e293b;
+        --bg-light: #f1f5f9;
+    }
+
+    body {
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background-color: var(--bg-light);
+        overflow: hidden; /* Handled by inner containers */
+    }
+
+    /* --- Animations --- */
+    @keyframes fadeSlideUp {
+        0% { opacity: 0; transform: translateY(20px); }
+        100% { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes scaleIn {
+        0% { opacity: 0; transform: scale(0.95); }
+        100% { opacity: 1; transform: scale(1); }
+    }
+
+    .view-section {
+        display: block;
+        animation: fadeSlideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Staggered Row Animations */
+    tbody tr {
+        animation: fadeSlideUp 0.4s ease forwards;
+    }
+    tbody tr:nth-child(1) { animation-delay: 0.05s; }
+    tbody tr:nth-child(2) { animation-delay: 0.1s; }
+    tbody tr:nth-child(3) { animation-delay: 0.15s; }
+    tbody tr:nth-child(4) { animation-delay: 0.2s; }
+    tbody tr:nth-child(5) { animation-delay: 0.25s; }
+
+    /* --- Sidebar Styles --- */
+    #sidebar-container {
+        width: var(--sidebar-width);
+        min-width: var(--sidebar-width);
+        background: var(--sidebar-bg);
+        color: white;
+        border-right: none;
+        box-shadow: 4px 0 15px rgba(0,0,0,0.05);
+        transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 1040;
+    }
+
+    #sidebar-container.collapsed {
+        margin-left: calc(-1 * var(--sidebar-width));
+    }
+
+    .brand-logo {
+        background: var(--primary-gradient);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+
+    .nav-link-custom {
+        color: #94a3b8;
+        border-radius: 0.75rem;
+        padding: 0.85rem 1.25rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .nav-link-custom::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; height: 100%; width: 0;
+        background: var(--primary-gradient);
+        opacity: 0.1;
+        transition: width 0.3s ease;
+        z-index: 0;
+    }
+
+    .nav-link-custom:hover {
+        color: white;
+        transform: translateX(5px);
+    }
+
+    .nav-link-custom:hover::before { width: 100%; }
+
+    .nav-link-custom.active {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+        box-shadow: inset 3px 0 0 #10b981;
+    }
+
+    .nav-link-custom i { z-index: 1; position: relative; }
+    .nav-link-custom span { z-index: 1; position: relative; }
+
+    /* --- Cards & UI Elements --- */
+    .card {
+        border-radius: 1rem;
+        border: none;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hover-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px -10px rgba(16, 185, 129, 0.2);
+    }
+
+    .btn-emerald {
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        transition: all 0.3s ease;
+    }
+    .btn-emerald:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 15px -5px rgba(16, 185, 129, 0.4);
+        color: white;
+    }
+
+    .welcome-banner {
+        background: var(--primary-gradient);
+        color: white;
+        border-radius: 1rem;
+        padding: 2rem;
+        position: relative;
+        overflow: hidden;
+    }
+    .welcome-banner::after {
+        content: '';
+        position: absolute;
+        top: -50%; right: -10%; width: 300px; height: 300px;
+        background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+
+    /* Map Container */
+    #map {
+        height: 400px;
+        width: 100%;
+        border-radius: 0.75rem;
+        border: 2px solid #e2e8f0;
+        z-index: 1;
+    }
+
+    .badge-animated {
+        transition: transform 0.2s ease;
+    }
+    .badge-animated:hover {
+        transform: scale(1.1);
+    }
+
+    #logout-screen {
+        position: fixed;
+        inset: 0;
+        background: var(--sidebar-bg);
+        color: white;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.5s ease;
+    }
+    #logout-screen.show {
+        opacity: 1;
+        pointer-events: all;
+    }
+</style>

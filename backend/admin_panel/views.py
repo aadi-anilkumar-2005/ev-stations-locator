@@ -16,6 +16,8 @@ class AdminLoginView(LoginView):
     redirect_authenticated_user = True
     
     def get_success_url(self):
+        if hasattr(self.request.user, 'role') and self.request.user.role == 'service':
+            return reverse_lazy('service-center-portal')
         return reverse_lazy('admin-dashboard')
 
     def form_invalid(self, form):

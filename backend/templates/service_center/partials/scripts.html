@@ -1,0 +1,41 @@
+{% load static %}
+<script>
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+        updateDashboardGreeting();
+    });
+
+    // --- Sidebar Toggle Logic ---
+    function toggleSidebar() {
+        document.getElementById('sidebar-container').classList.toggle('collapsed');
+    }
+
+    // --- Notifications ---
+    function showToast(message, type = 'success') {
+        const toastEl = document.getElementById('actionToast');
+        const toastBody = document.getElementById('toastMessage');
+        if (!toastEl || !toastBody) return;
+        let bgClass = type === 'success' ? 'bg-success' : (type === 'danger' ? 'bg-danger' : 'bg-primary');
+        toastEl.className = `toast align-items-center text-white border-0 shadow-lg ${bgClass}`;
+        let icon = type === 'success' ? 'check-circle' : 'info';
+        toastBody.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i> ${message}`;
+        lucide.createIcons();
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+    }
+
+    function updateDashboardGreeting() {
+        const greetingEl = document.getElementById('dash-greeting');
+        if (greetingEl) {
+            const hour = new Date().getHours();
+            let greeting = hour < 12 ? 'Good Morning' : (hour < 18 ? 'Good Afternoon' : 'Good Evening');
+            greetingEl.textContent = `${greeting}, Partner!`;
+        }
+    }
+</script>
+
+<!-- Load location-picker.js only on pages that have the locationMap element -->
+{% if request.resolver_match.url_name == 'service-location-add' or request.resolver_match.url_name == 'service-location-edit' %}
+<script src="{% static 'admin/js/location-picker.js' %}"></script>
+{% endif %}

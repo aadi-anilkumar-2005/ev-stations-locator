@@ -1,0 +1,23 @@
+<div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="mobileMenu">
+    <div class="offcanvas-header border-bottom border-secondary border-opacity-25">
+        <h5 class="offcanvas-title brand-logo fw-bold d-flex align-items-center gap-2">
+            <i data-lucide="zap"></i> ChargePoint
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-3">
+        <a href="{% url 'service-center-portal' %}" class="nav-link-custom {% if active_page == 'dashboard' %}active{% endif %}" onclick="bootstrap.Offcanvas.getInstance('#mobileMenu').hide()">
+            <i data-lucide="layout-dashboard"></i> <span>Dashboard</span>
+        </a>
+        <a href="{% url 'service-locations-list' %}" class="nav-link-custom {% if active_page == 'locations' %}active{% endif %}" onclick="bootstrap.Offcanvas.getInstance('#mobileMenu').hide()">
+            <i data-lucide="map-pin"></i> <span>My Locations</span>
+        </a>
+        <a href="{% url 'service-amenities-list' %}" class="nav-link-custom {% if active_page == 'amenities' %}active{% endif %}" onclick="bootstrap.Offcanvas.getInstance('#mobileMenu').hide()">
+            <i data-lucide="coffee"></i> <span>Facility Amenities</span>
+        </a>
+        <hr class="border-secondary opacity-25">
+        <a href="{% url 'admin-logout' %}" class="nav-link-custom text-danger mt-4">
+            <i data-lucide="log-out"></i> <span>Secure Logout</span>
+        </a>
+    </div>
+</div>

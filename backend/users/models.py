@@ -17,6 +17,13 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     full_name = models.CharField(max_length=255, default="")
     middle_name = models.CharField(max_length=255, blank=True)
+    
+    ROLE_CHOICES = (
+        ('admin', 'Admin'),
+        ('service', 'Service Center'),
+        ('customer', 'Customer'),
+    )
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='admin')
 
     class Meta:
         db_table = 'platform_users'
