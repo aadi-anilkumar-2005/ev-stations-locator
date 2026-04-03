@@ -1,0 +1,38 @@
+{% extends 'charging_station/base.html' %}
+
+{% block content %}
+<div class="view-section active">
+    <header class="d-flex align-items-center gap-3 mb-4">
+        <a href="{% url 'admin-cs-amenities' %}" class="btn btn-white shadow-sm border rounded-circle p-2">
+            <i data-lucide="arrow-left" class="w-5 h-5 text-dark"></i>
+        </a>
+        <div>
+            <h4 class="fw-bold mb-0 text-dark">{% if amenity %}Edit Amenity{% else %}Add Amenity{% endif %}</h4>
+            <p class="text-muted mb-0 small">Create or update an amenity available at your stations.</p>
+        </div>
+    </header>
+
+    <form method="POST" action="{% if amenity %}{% url 'admin-cs-amenity-edit' amenity.id %}{% else %}{% url 'admin-cs-amenity-add' %}{% endif %}" class="mx-auto mx-md-0" style="max-width: 600px;">
+        {% csrf_token %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4 p-md-5">
+                <div class="mb-3">
+                    <label class="form-label text-secondary fw-bold small text-uppercase">Amenity Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white text-muted border-end-0">
+                            <i data-lucide="tag" class="w-5 h-5"></i>
+                        </span>
+                        <input type="text" name="name" class="form-control form-control-lg bg-light border-start-0 ps-0" placeholder="e.g. Free WiFi, EV Charging Lounge" value="{{ amenity.name|default:'' }}" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-flex gap-3 pb-5">
+            <a href="{% url 'admin-cs-amenities' %}" class="btn btn-white border flex-grow-1 py-3 fw-bold shadow-sm">Cancel</a>
+            <button type="submit" class="btn btn-emerald flex-grow-1 py-3 fw-bold shadow">
+                {% if amenity %}Update Amenity{% else %}Save Amenity{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

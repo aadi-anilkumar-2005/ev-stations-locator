@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'stations',
     'admin_panel',
     'service_center',
+    'showroom',
+    'charging_station',
 ]
 
 MIDDLEWARE = [

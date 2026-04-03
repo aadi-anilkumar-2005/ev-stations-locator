@@ -1,0 +1,39 @@
+<div class="bg-white p-3 shadow-sm d-flex justify-content-between align-items-center sticky-top z-3">
+    <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-light border d-none d-md-flex align-items-center justify-content-center hover-card" type="button" onclick="toggleSidebar()" style="width: 42px; height: 42px;" title="Toggle Sidebar">
+            <i data-lucide="menu" class="text-secondary w-5 h-5"></i>
+        </button>
+        <h5 class="fw-bold mb-0 brand-logo d-md-none"><i data-lucide="zap" class="w-5 h-5"></i> ChargePoint</h5>
+    </div>
+    <button class="btn btn-light border d-md-none d-flex align-items-center justify-content-center hover-card" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileMenu" style="width: 42px; height: 42px;" aria-label="Toggle Menu">
+        <i data-lucide="menu" class="text-secondary w-5 h-5"></i>
+    </button>
+</div>
+
+<!-- Mobile Sidebar Offcanvas -->
+<div class="offcanvas offcanvas-start bg-dark text-white" tabindex="-1" id="mobileMenu">
+    <div class="offcanvas-header border-bottom border-secondary border-opacity-25">
+        <h5 class="offcanvas-title brand-logo fw-bold d-flex align-items-center gap-2">
+            <i data-lucide="zap"></i> ChargePoint
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body p-3">
+        <a href="{% url 'admin-showroom-dashboard' %}" class="nav-link-custom {% if active_page == 'dashboard' %}active{% endif %}">
+            <i data-lucide="layout-dashboard"></i> <span>Dashboard</span>
+        </a>
+        <a href="{% url 'admin-showroom-list' %}" class="nav-link-custom {% if active_page == 'showrooms' %}active{% endif %}">
+            <i data-lucide="store"></i> <span>Showrooms</span>
+        </a>
+        <a href="{% url 'admin-showroom-brand-list' %}" class="nav-link-custom {% if active_page == 'brands' %}active{% endif %}">
+            <i data-lucide="award"></i> <span>Vehicle Brands</span>
+        </a>
+        <a href="{% url 'admin-showroom-amenity-list' %}" class="nav-link-custom {% if active_page == 'amenities' %}active{% endif %}">
+            <i data-lucide="coffee"></i> <span>Facility Amenities</span>
+        </a>
+        <hr class="border-secondary opacity-25">
+        <a href="javascript:void(0)" class="nav-link-custom text-danger mt-4" onclick="handleLogout()">
+            <i data-lucide="log-out"></i> <span>Secure Logout</span>
+        </a>
+    </div>
+</div>

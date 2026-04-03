@@ -1,0 +1,288 @@
+{% extends 'charging_station/base.html' %}
+
+{% block content %}
+<div class="view-section active">
+    <header class="d-flex align-items-center gap-3 mb-4">
+        <a href="{% url 'admin-cs-stations' %}" class="btn btn-white shadow-sm border rounded-circle p-2">
+            <i data-lucide="arrow-left" class="w-5 h-5 text-dark"></i>
+        </a>
+        <div>
+            <h3 class="fw-bold mb-0 text-dark">{% if is_edit %}Edit Station{% else %}Add New Station{% endif %}</h3>
+            <p class="text-muted mb-0">Set details, hardware config, and amenities.</p>
+        </div>
+    </header>
+
+    {% if error %}
+    <div class="alert alert-danger shadow-sm border-0 alert-dismissible fade show" role="alert">
+        <i data-lucide="alert-circle" class="w-5 h-5 d-inline me-2 mb-1"></i>
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endif %}
+
+    <form method="POST" action="{% if is_edit %}{% url 'admin-cs-station-edit' station.station_id %}{% else %}{% url 'admin-cs-station-add' %}{% endif %}" class="mx-auto mx-md-0" style="max-width: 900px;">
+        {% csrf_token %}
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i data-lucide="info" class="text-primary"></i> Station Details
+                </h5>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Station Name</label>
+                        <input type="text" name="name" class="form-control form-control-lg bg-light" placeholder="e.g. Downtown Fast Charge" value="{{ station.name|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Operator Name</label>
+                        <input type="text" name="operator_name" class="form-control form-control-lg bg-light" placeholder="e.g. ChargePoint Network" value="{{ station.operator_name|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Current Status</label>
+                        <select name="status" class="form-select bg-light">
+                            <option value="active" {% if station.status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="maintenance" {% if station.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                            <option value="offline" {% if station.status == 'offline' %}selected{% endif %}>Offline</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Opening Hours</label>
+                        <input type="text" name="opening_hours" class="form-control bg-light" placeholder="e.g. 24/7" value="{{ station.opening_hours|default:'' }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i data-lucide="map-pin" class="text-danger"></i> Location
+                </h5>
+                <div class="mb-4">
+                    <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Full Address</label>
+                    <textarea name="address" class="form-control bg-light" rows="2" placeholder="123 Main Street" required>{{ station.address.street|default:'' }}</textarea>
+                </div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">City</label>
+                        <input type="text" name="city" class="form-control bg-light" placeholder="e.g. Austin" value="{{ station.address.city|default:'' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">State/Province</label>
+                        <input type="text" name="state" class="form-control bg-light" placeholder="e.g. TX" value="{{ station.address.state|default:'' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Zip Code</label>
+                        <input type="text" name="zip_code" class="form-control bg-light" placeholder="e.g. 78701" value="{{ station.address.zip_code|default:'' }}" required>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">GPS Coordinates (Pin on Map)</label>
+                        <div id="map" class="shadow-sm"></div>
+                        <div class="d-flex gap-3 mt-3">
+                            <input type="text" id="mapLat" name="latitude" class="form-control font-monospace bg-light text-center" placeholder="Latitude" value="{{ station.address.latitude|default:'' }}" readonly required>
+                            <input type="text" id="mapLng" name="longitude" class="form-control font-monospace bg-light text-center" placeholder="Longitude" value="{{ station.address.longitude|default:'' }}" readonly required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4 p-md-5">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                        <i data-lucide="plug" class="text-info"></i> Charger Configuration
+                    </h5>
+                    <button type="button" class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="addChargerRow()">
+                        + Add Unit
+                    </button>
+                </div>
+                <div id="charger-rows-container">
+                    {% if is_edit and station.station_chargers.all %}
+                        {% for sc in station.station_chargers.all %}
+                        <div class="row g-3 mb-3 border-bottom pb-3 charger-row align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label text-secondary small fw-bold">Charger Type</label>
+                                <select name="charger_types[]" class="form-select bg-light" required>
+                                    <option value="">Select Type</option>
+                                    {% for ct in charger_types %}
+                                    <option value="{{ ct.id }}" {% if ct.id == sc.charger_type_id %}selected{% endif %}>{{ ct.name }} ({{ ct.max_power_kw }}kW)</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-secondary small fw-bold">Start Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text border-end-0 bg-white">$</span>
+                                    <input type="number" step="0.01" name="start_prices[]" class="form-control border-start-0 ps-0 bg-white" value="{{ sc.start_price }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-secondary small fw-bold">End Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text border-end-0 bg-white">$</span>
+                                    <input type="number" step="0.01" name="end_prices[]" class="form-control border-start-0 ps-0 bg-white" value="{{ sc.end_price }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-light text-danger border w-100" onclick="this.closest('.charger-row').remove()">
+                                    <i data-lucide="trash-2" class="w-5 h-5 mx-auto"></i>
+                                </button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="row g-3 mb-3 border-bottom pb-3 charger-row align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label text-secondary small fw-bold">Charger Type</label>
+                                <select name="charger_types[]" class="form-select bg-light" required>
+                                    <option value="">Select Type</option>
+                                    {% for ct in charger_types %}
+                                    <option value="{{ ct.id }}">{{ ct.name }} ({{ ct.max_power_kw }}kW)</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-secondary small fw-bold">Start Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text border-end-0 bg-white">$</span>
+                                    <input type="number" step="0.01" name="start_prices[]" class="form-control border-start-0 ps-0 bg-white" value="0.00" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label text-secondary small fw-bold">End Price</label>
+                                <div class="input-group">
+                                    <span class="input-group-text border-end-0 bg-white">$</span>
+                                    <input type="number" step="0.01" name="end_prices[]" class="form-control border-start-0 ps-0 bg-white" value="0.00" required>
+                                </div>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-light text-danger border w-100" onclick="this.closest('.charger-row').remove()">
+                                    <i data-lucide="trash-2" class="w-5 h-5 mx-auto"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i data-lucide="coffee" class="text-warning"></i> Station Amenities
+                </h5>
+                <div class="row g-3">
+                    {% for amenity in amenities %}
+                    <div class="col-6 col-md-4">
+                        <div class="form-check p-2 border rounded-3 bg-white h-100 shadow-sm">
+                            <input class="form-check-input ms-2" type="checkbox" name="amenities" value="{{ amenity.id }}" id="am_{{ amenity.id }}"
+                            {% if amenity.id in selected_amenities %}checked{% endif %}>
+                            <label class="form-check-label d-flex align-items-center gap-2 small ms-2 fw-medium" for="am_{{ amenity.id }}">
+                                <i data-lucide="check-circle" class="w-4 h-4 text-emerald"></i> {{ amenity.name }}
+                            </label>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-muted small">No amenities available in the system yet.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-3 mb-5">
+            <a href="{% url 'admin-cs-stations' %}" class="btn btn-light px-4 py-3 fw-bold border shadow-sm">Cancel</a>
+            <button type="submit" class="btn btn-emerald px-5 py-3 fw-bold shadow">
+                {% if is_edit %}
+                <i data-lucide="save" class="w-5 h-5 d-inline me-2"></i> Save Changes
+                {% else %}
+                <i data-lucide="plus" class="w-5 h-5 d-inline me-2"></i> Create Station
+                {% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let map = null;
+    let mapMarker = null;
+
+    function initMap() {
+        const latInput = document.getElementById('mapLat');
+        const lngInput = document.getElementById('mapLng');
+        
+        let initLat = latInput.value ? parseFloat(latInput.value) : 30.2672;
+        let initLng = lngInput.value ? parseFloat(lngInput.value) : -97.7431;
+
+        map = L.map('map').setView([initLat, initLng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19, attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        if (latInput.value && lngInput.value) {
+            setMapMarker(initLat, initLng);
+        }
+
+        map.on('click', function(e) {
+            setMapMarker(e.latlng.lat, e.latlng.lng);
+        });
+    }
+
+    function setMapMarker(lat, lng) {
+        if (mapMarker) map.removeLayer(mapMarker);
+        mapMarker = L.marker([lat, lng]).addTo(map);
+        document.getElementById('mapLat').value = lat.toFixed(6);
+        document.getElementById('mapLng').value = lng.toFixed(6);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        initMap();
+    });
+
+    const chargerOptionsHTML = `
+        <option value="">Select Type</option>
+        {% for ct in charger_types %}
+        <option value="{{ ct.id }}">{{ ct.name }} ({{ ct.max_power_kw }}kW)</option>
+        {% endfor %}
+    `;
+
+    function addChargerRow() {
+        const container = document.getElementById('charger-rows-container');
+        const row = document.createElement('div');
+        row.className = 'row g-3 mb-3 border-bottom pb-3 charger-row align-items-end';
+        row.innerHTML = `
+            <div class="col-md-4">
+                <label class="form-label text-secondary small fw-bold">Charger Type</label>
+                <select name="charger_types[]" class="form-select bg-light" required>
+                    ${chargerOptionsHTML}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-secondary small fw-bold">Start Price</label>
+                <div class="input-group">
+                    <span class="input-group-text border-end-0 bg-white">$</span>
+                    <input type="number" step="0.01" name="start_prices[]" class="form-control border-start-0 ps-0 bg-white" value="0.00" required>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-secondary small fw-bold">End Price</label>
+                <div class="input-group">
+                    <span class="input-group-text border-end-0 bg-white">$</span>
+                    <input type="number" step="0.01" name="end_prices[]" class="form-control border-start-0 ps-0 bg-white" value="0.00" required>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-light text-danger border w-100" onclick="this.closest('.charger-row').remove()">
+                    <i data-lucide="trash-2" class="w-5 h-5 mx-auto"></i>
+                </button>
+            </div>
+        `;
+        container.appendChild(row);
+        lucide.createIcons();
+    }
+</script>
+{% endblock %}

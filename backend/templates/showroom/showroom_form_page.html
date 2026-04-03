@@ -1,0 +1,184 @@
+{% extends 'showroom/base.html' %}
+
+{% block content %}
+<div class="view-section active">
+    <header class="d-flex align-items-center gap-3 mb-4">
+        <a href="{% url 'admin-showroom-list' %}" class="btn btn-white shadow-sm border rounded-circle p-2">
+            <i data-lucide="arrow-left" class="w-5 h-5 text-dark"></i>
+        </a>
+        <div>
+            <h3 class="fw-bold mb-0 text-dark">{% if showroom %}Edit Showroom{% else %}Add New Showroom{% endif %}</h3>
+            <p class="text-muted mb-0">Set brand affiliation, location, and operational details.</p>
+        </div>
+    </header>
+
+    <form method="post" class="mx-auto mx-md-0" style="max-width: 900px;">
+        {% csrf_token %}
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i data-lucide="info" class="text-primary"></i> Showroom Basics
+                </h5>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Showroom Name</label>
+                        <input type="text" name="name" class="form-control form-control-lg bg-light" placeholder="e.g. Tesla Gallery - Downtown" value="{{ showroom.name|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Vehicle Brand</label>
+                        <select name="brand_id" class="form-select form-select-lg bg-light" required>
+                            <option value="">Select a Brand</option>
+                            {% for brand in brands %}
+                            <option value="{{ brand.brand_id }}" {% if showroom.brand.brand_id == brand.brand_id %}selected{% endif %}>{{ brand.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Operating Hours</label>
+                        <input type="text" name="hours" class="form-control bg-light" placeholder="e.g. Mon-Sat 10:00 - 20:00" value="{{ showroom.operating_hours|default:'' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Current Status</label>
+                        <select name="status" class="form-select bg-light">
+                            <option value="active" {% if showroom.status == 'active' %}selected{% endif %}>Active & Open</option>
+                            <option value="renovation" {% if showroom.status == 'renovation' %}selected{% endif %}>Under Renovation</option>
+                            <option value="closed" {% if showroom.status == 'closed' %}selected{% endif %}>Permanently Closed</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i data-lucide="phone" class="text-success"></i> Contact Information
+                </h5>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Phone</label>
+                        <input type="tel" name="phone" class="form-control bg-light" placeholder="+1 (555) 000-0000" value="{{ showroom.contact_phone|default:'' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Email</label>
+                        <input type="email" name="email" class="form-control bg-light" placeholder="contact@showroom.com" value="{{ showroom.contact_email|default:'' }}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Website</label>
+                        <input type="url" name="website" class="form-control bg-light" placeholder="https://" value="{{ showroom.website_url|default:'' }}">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i data-lucide="map-pin" class="text-danger"></i> Location Details
+                </h5>
+                <div class="mb-4">
+                    <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Full Address</label>
+                    <textarea name="address" class="form-control bg-light" rows="2" placeholder="123 Gallery Street" required>{{ address.address_line1|default:'' }}</textarea>
+                </div>
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">City</label>
+                        <input type="text" name="city" class="form-control bg-light" value="{{ address.city|default:'' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">State/Province</label>
+                        <input type="text" name="state" class="form-control bg-light" value="{{ address.state|default:'' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Zip Code</label>
+                        <input type="text" name="zip_code" class="form-control bg-light" value="{{ address.zip_code|default:'' }}" required>
+                    </div>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">GPS Coordinates (Pin on Map)</label>
+                        <div id="map" class="shadow-sm"></div>
+                        <div class="d-flex gap-3 mt-3">
+                            <input type="text" id="mapLat" name="latitude" class="form-control font-monospace bg-light text-center" placeholder="Latitude" value="{{ address.latitude|default:'' }}" readonly required>
+                            <input type="text" id="mapLng" name="longitude" class="form-control font-monospace bg-light text-center" placeholder="Longitude" value="{{ address.longitude|default:'' }}" readonly required>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
+                    <i data-lucide="coffee" class="text-warning"></i> Showroom Amenities
+                </h5>
+                <div class="row g-3" id="showroom-amenities-container">
+                    {% for amenity in amenities %}
+                    <div class="col-md-4">
+                        <div class="form-check">
+                            <input class="form-check-input show-amenity-cb shadow-sm" type="checkbox" name="amenities" value="{{ amenity.id }}" id="amenity_{{ amenity.id }}" {% if amenity.id in selected_amenities %}checked{% endif %}>
+                            <label class="form-check-label fw-medium" for="amenity_{{ amenity.id }}">
+                                {{ amenity.name }}
+                            </label>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-muted small">No amenities available in the system.</div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mb-5">
+            <button type="submit" class="btn btn-emerald px-5 py-3 fw-bold shadow">
+                <i data-lucide="save" class="w-5 h-5 d-inline me-2"></i> Save Showroom
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let map = null;
+    let mapMarker = null;
+
+    function initMap() {
+        const latInput = document.getElementById('mapLat');
+        const lngInput = document.getElementById('mapLng');
+        
+        let initLat = latInput.value ? parseFloat(latInput.value) : 37.3382;
+        let initLng = lngInput.value ? parseFloat(lngInput.value) : -121.8863;
+        
+        map = L.map('map').setView([initLat, initLng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19, attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        if (latInput.value && lngInput.value) {
+            setMapMarker(initLat, initLng);
+        }
+
+        map.on('click', function(e) {
+            setMapMarker(e.latlng.lat, e.latlng.lng);
+        });
+    }
+
+    function setMapMarker(lat, lng) {
+        if (mapMarker) map.removeLayer(mapMarker);
+        if (lat && lng) {
+            mapMarker = L.marker([lat, lng]).addTo(map);
+            document.getElementById('mapLat').value = lat.toFixed(6);
+            document.getElementById('mapLng').value = lng.toFixed(6);
+            map.setView([lat, lng], map.getZoom());
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // give it a short timeout to ensure container is fully visible before initializing map
+        setTimeout(() => {
+            initMap();
+        }, 300);
+    });
+</script>
+{% endblock %}

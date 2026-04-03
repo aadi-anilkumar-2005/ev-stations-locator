@@ -1,0 +1,95 @@
+{% extends 'charging_station/base.html' %}
+
+{% block content %}
+<div class="view-section active">
+    <header class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-0 text-dark">Charging Stations</h3>
+            <p class="text-muted mb-0">Manage your network of public charging locations.</p>
+        </div>
+        <a href="{% url 'admin-cs-station-add' %}" class="btn btn-emerald rounded-3 px-3 shadow-sm">
+            <i data-lucide="plus" class="w-4 h-4 me-1 d-inline"></i> Add Station
+        </a>
+    </header>
+
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 border-top-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-4 border-0">Station Name & Operator</th>
+                        <th class="border-0">Location</th>
+                        <th class="border-0">Chargers</th>
+                        <th class="border-0">Status</th>
+                        <th class="text-end pe-4 border-0">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for station in stations %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-bold text-dark">{{ station.name }}</div>
+                            <div class="text-muted small d-flex align-items-center gap-1 mt-1">
+                                <i data-lucide="briefcase" class="w-3 h-3"></i> {{ station.operator_name }}
+                            </div>
+                        </td>
+                        <td>
+                            <div class="fw-medium text-secondary">
+                                {% if station.address %}
+                                    {{ station.address.city }}, {{ station.address.state }}
+                                {% else %}
+                                    <span class="text-muted fst-italic">No Address</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-dark bg-opacity-10 text-dark border px-3 py-2 rounded-pill">
+                                {{ station.station_chargers.count }} Units
+                            </span>
+                        </td>
+                        <td>
+                            {% if station.status == 'active' %}
+                                <span class="badge badge-animated bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-3 py-2 rounded-pill">
+                                    <i data-lucide="check-circle" class="w-3 h-3 me-1 d-inline"></i>Active
+                                </span>
+                            {% elif station.status == 'maintenance' %}
+                                <span class="badge badge-animated bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 px-3 py-2 rounded-pill">
+                                    <i data-lucide="tool" class="w-3 h-3 me-1 d-inline"></i>Maintenance
+                                </span>
+                            {% elif station.status == 'offline' %}
+                                <span class="badge badge-animated bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-3 py-2 rounded-pill">
+                                    <i data-lucide="x-circle" class="w-3 h-3 me-1 d-inline"></i>Offline
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="{% url 'admin-cs-station-edit' station.station_id %}" class="btn btn-sm btn-light border rounded-circle shadow-sm hover-card" title="Edit">
+                                    <i data-lucide="edit-2" class="w-4 h-4 text-primary"></i>
+                                </a>
+                                <form action="{% url 'admin-cs-station-delete' station.station_id %}" method="POST" class="d-inline" onsubmit="return confirm('Confirm deletion of this station?');">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-light border rounded-circle shadow-sm hover-card" title="Delete">
+                                        <i data-lucide="trash-2" class="w-4 h-4 text-danger"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            <div class="d-flex flex-column align-items-center">
+                                <i data-lucide="battery-charging" class="text-secondary opacity-50 mb-3" style="width: 48px; height: 48px;"></i>
+                                <h5>No stations available</h5>
+                                <p class="small mb-0">Get started by adding your first charging station.</p>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
