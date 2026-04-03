@@ -46,27 +46,7 @@
                 <i data-lucide="settings" class="w-5 h-5"></i> Settings
             </a>
         </li>
-        <li class="nav-item mt-3">
-            <span class="text-uppercase text-secondary small fw-bold px-2">Management</span>
-        </li>
-        <li>
-            <a href="{% url 'admin-amenities' %}"
-                class="nav-link {% if 'admin-amenities' in request.resolver_match.url_name %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
-                <i data-lucide="list" class="w-5 h-5"></i> Amenities
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'admin-brands' %}"
-                class="nav-link {% if 'admin-brands' in request.resolver_match.url_name %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
-                <i data-lucide="tag" class="w-5 h-5"></i> Brands
-            </a>
-        </li>
-        <li>
-            <a href="{% url 'admin-charger-types' %}"
-                class="nav-link {% if 'admin-charger-types' in request.resolver_match.url_name %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
-                <i data-lucide="battery-charging" class="w-5 h-5"></i> Charger Types
-            </a>
-        </li>
+
     </ul>
     <hr>
     <div class="dropdown px-2">

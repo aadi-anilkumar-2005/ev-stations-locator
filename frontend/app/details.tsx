@@ -263,11 +263,11 @@ export default function DetailsScreen() {
                 ? station.distance.toFixed(1)
                 : location
                   ? calculateDistance(
-                      location.latitude,
-                      location.longitude,
-                      station.latitude,
-                      station.longitude,
-                    ).toFixed(1)
+                    location.latitude,
+                    location.longitude,
+                    station.latitude,
+                    station.longitude,
+                  ).toFixed(1)
                   : "-"}
             </Text>
             <Text style={[styles.statLabel, { color: colors.textSecondary }]}>
@@ -338,7 +338,7 @@ export default function DetailsScreen() {
                     }}
                   >
                     {charger.start_price > 0
-                      ? `$${charger.start_price}/kWh`
+                      ? `₹${charger.start_price}/kWh`
                       : "Free"}
                   </Text>
                   {!charger.is_available && (

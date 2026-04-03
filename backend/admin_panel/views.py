@@ -18,13 +18,6 @@ class AdminLoginView(LoginView):
     redirect_authenticated_user = True
 
     def get_success_url(self):
-        if hasattr(self.request.user, 'role'):
-            if (self.request.user.role == 'service'):
-                return reverse_lazy('service-center-portal')
-            elif (self.request.user.role == 'showroom'):
-                return reverse_lazy('admin-showroom-dashboard')
-            elif (self.request.user.role == 'station'):
-                return reverse_lazy('admin-cs-dashboard')
         return reverse_lazy('admin-dashboard')
 
     def form_invalid(self, form):
@@ -32,6 +25,22 @@ class AdminLoginView(LoginView):
 
 class AdminLogoutView(LogoutView):
     next_page = reverse_lazy('admin-login')
+    http_method_names = ['get', 'post', 'options']
+
+    def _do_logout(self, request):
+        from django.contrib.auth import logout as django_logout
+        try:
+            request.session.flush()
+        except Exception:
+            pass
+        django_logout(request)
+        return redirect(self.next_page)
+
+    def get(self, request, *args, **kwargs):
+        return self._do_logout(request)
+
+    def post(self, request, *args, **kwargs):
+        return self._do_logout(request)
 
 class AdminDashboardView(AdminRequiredMixin, TemplateView):
     template_name = 'admin/dashboard/dashboard.html'
@@ -72,42 +81,27 @@ class AdminDashboardView(AdminRequiredMixin, TemplateView):
             return 'bg-warning'
         return 'bg-secondary'
 
-class AdminBrandsView(AdminRequiredMixin, ListView):
-    from stations.models import Brand
-    model = Brand
-    template_name = 'admin/brands/brands.html'
-    context_object_name = 'brands'
-    paginate_by = 20
-    ordering = ['name']
-
-class AdminAddBrandView(AdminRequiredMixin, CreateView):
-    from stations.models import Brand
-    model = Brand
-    template_name = 'admin/brands/add-brand.html'
-    fields = ['name']
-    success_url = reverse_lazy('admin-brands')
+class AdminStationsView(AdminRequiredMixin, TemplateView):
+    template_name = 'admin/stations/stations.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['is_edit'] = False
+        stations_list = Station.objects.select_related('address').all().order_by('-created_at')
+        paginator = Paginator(stations_list, 10)
+        page_number = self.request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+        context['stations'] = page_obj
+        context['page_obj'] = page_obj
         return context
 
-class AdminEditBrandView(AdminRequiredMixin, UpdateView):
-    from stations.models import Brand
-    model = Brand
-    template_name = 'admin/brands/add-brand.html'
-    fields = ['name']
-    success_url = reverse_lazy('admin-brands')
+class AdminStationDetailView(AdminRequiredMixin, DetailView):
+    model = Station
+    template_name = 'admin/stations/station_detail.html'
+    context_object_name = 'station'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['is_edit'] = True
-        return context
-
-class AdminDeleteBrandView(AdminRequiredMixin, DeleteView):
-    from stations.models import Brand
-    model = Brand
-    success_url = reverse_lazy('admin-brands')
+class AdminStationDeleteView(AdminRequiredMixin, DeleteView):
+    model = Station
+    success_url = reverse_lazy('admin-stations')
 
     def get(self, request, *args, **kwargs):
         return redirect(self.success_url)
@@ -125,95 +119,10 @@ class AdminShowroomsView(AdminRequiredMixin, TemplateView):
         context['page_obj'] = page_obj
         return context
 
-class AdminAddShowroomView(AdminRequiredMixin, TemplateView):
-    template_name = 'admin/showrooms/add-showroom.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        from stations.models import Brand
-        context['brands'] = Brand.objects.all()
-        context['amenities'] = Amenity.objects.filter(category='showroom')
-        return context
-
-    def post(self, request, *args, **kwargs):
-        try:
-            with transaction.atomic():
-                from stations.models import Brand, Showroom, ShowroomAmenity
-                address = Address.objects.create(street=request.POST.get('address'), city=request.POST.get('city'), state=request.POST.get('state'), zip_code=request.POST.get('zip_code'), latitude=(request.POST.get('latitude') or None), longitude=(request.POST.get('longitude') or None))
-                brand_id = request.POST.get('brand_id')
-                brand = (Brand.objects.get(pk=brand_id) if brand_id else None)
-                showroom = Showroom.objects.create(name=request.POST.get('name'), brand=brand, status=request.POST.get('status', 'active'), opening_hours=request.POST.get('opening_hours'), phone=request.POST.get('phone'), email=request.POST.get('email'), website=request.POST.get('website'), address=address)
-                amenity_ids = request.POST.getlist('amenities')
-                for am_id in amenity_ids:
-                    try:
-                        amenity = Amenity.objects.get(id=am_id)
-                        ShowroomAmenity.objects.create(showroom=showroom, amenity=amenity)
-                    except Amenity.DoesNotExist:
-                        continue
-            return redirect('admin-showrooms')
-        except Exception as e:
-            print(f'Error creating showroom: {e}')
-            context = self.get_context_data()
-            context['error'] = str(e)
-            return render(request, self.template_name, context)
-
 class AdminShowroomDetailView(AdminRequiredMixin, DetailView):
     model = Showroom
     template_name = 'admin/showrooms/showroom_detail.html'
     context_object_name = 'showroom'
-
-class AdminShowroomEditView(AdminRequiredMixin, UpdateView):
-    model = Showroom
-    template_name = 'admin/showrooms/add-showroom.html'
-    fields = ['name', 'status', 'opening_hours', 'phone', 'email', 'website']
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['is_edit'] = True
-        from stations.models import Brand
-        context['brands'] = Brand.objects.all()
-        context['amenities'] = Amenity.objects.filter(category='showroom')
-        showroom = self.get_object()
-        context['selected_amenities'] = list(showroom.showroom_amenities.values_list('amenity_id', flat=True))
-        return context
-
-    def post(self, request, *args, **kwargs):
-        showroom = self.get_object()
-        try:
-            with transaction.atomic():
-                from stations.models import Brand, ShowroomAmenity
-                address = showroom.address
-                if address:
-                    address.street = request.POST.get('address')
-                    address.city = request.POST.get('city')
-                    address.state = request.POST.get('state')
-                    address.zip_code = request.POST.get('zip_code')
-                    address.latitude = (request.POST.get('latitude') or None)
-                    address.longitude = (request.POST.get('longitude') or None)
-                    address.save()
-                showroom.name = request.POST.get('name')
-                brand_id = request.POST.get('brand_id')
-                showroom.brand = (Brand.objects.get(pk=brand_id) if brand_id else None)
-                showroom.status = request.POST.get('status', 'active')
-                showroom.opening_hours = request.POST.get('opening_hours')
-                showroom.phone = request.POST.get('phone')
-                showroom.email = request.POST.get('email')
-                showroom.website = request.POST.get('website')
-                showroom.save()
-                ShowroomAmenity.objects.filter(showroom=showroom).delete()
-                amenity_ids = request.POST.getlist('amenities')
-                for am_id in amenity_ids:
-                    try:
-                        amenity = Amenity.objects.get(id=am_id)
-                        ShowroomAmenity.objects.create(showroom=showroom, amenity=amenity)
-                    except Amenity.DoesNotExist:
-                        continue
-            return redirect('admin-showrooms')
-        except Exception as e:
-            print(f'Error updating showroom: {e}')
-            context = self.get_context_data()
-            context['error'] = str(e)
-            return render(request, self.template_name, context)
 
 class AdminShowroomDeleteView(AdminRequiredMixin, DeleteView):
     model = Showroom
@@ -236,90 +145,11 @@ class AdminServiceCentersView(AdminRequiredMixin, TemplateView):
         context['page_obj'] = page_obj
         return context
 
-class AdminAddServiceCenterView(AdminRequiredMixin, TemplateView):
-    template_name = 'admin/service_centers/add-service-center.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['amenities'] = Amenity.objects.filter(category='service')
-        return context
-
-    def post(self, request, *args, **kwargs):
-        try:
-            with transaction.atomic():
-                from stations.models import ServiceCenter, ServiceAmenity
-                address = Address.objects.create(street=request.POST.get('address'), city=request.POST.get('city'), state=request.POST.get('state'), zip_code=request.POST.get('zip_code'), latitude=(request.POST.get('latitude') or None), longitude=(request.POST.get('longitude') or None))
-                service_center = ServiceCenter.objects.create(name=request.POST.get('name'), status=request.POST.get('status', 'active'), is_emergency_service=(request.POST.get('is_emergency_service') == 'on'), opening_hours=request.POST.get('opening_hours'), phone=request.POST.get('phone'), email=request.POST.get('email'), website=request.POST.get('website'), address=address)
-                amenity_ids = request.POST.getlist('amenities')
-                for am_id in amenity_ids:
-                    try:
-                        amenity = Amenity.objects.get(id=am_id)
-                        ServiceAmenity.objects.create(service=service_center, amenity=amenity)
-                    except Amenity.DoesNotExist:
-                        continue
-            return redirect('admin-service-centers')
-        except Exception as e:
-            print(f'Error creating service center: {e}')
-            context = self.get_context_data()
-            context['error'] = str(e)
-            return render(request, self.template_name, context)
-
 class AdminServiceCenterDetailView(AdminRequiredMixin, DetailView):
     from stations.models import ServiceCenter
     model = ServiceCenter
     template_name = 'admin/service_centers/service_center_detail.html'
     context_object_name = 'service_center'
-
-class AdminServiceCenterEditView(AdminRequiredMixin, UpdateView):
-    from stations.models import ServiceCenter
-    model = ServiceCenter
-    template_name = 'admin/service_centers/add-service-center.html'
-    fields = ['name', 'status', 'opening_hours', 'phone', 'email', 'website', 'is_emergency_service']
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['is_edit'] = True
-        context['amenities'] = Amenity.objects.filter(category='service')
-        service_center = self.get_object()
-        context['selected_amenities'] = list(service_center.service_amenities.values_list('amenity_id', flat=True))
-        return context
-
-    def post(self, request, *args, **kwargs):
-        service_center = self.get_object()
-        try:
-            with transaction.atomic():
-                from stations.models import ServiceAmenity
-                address = service_center.address
-                if address:
-                    address.street = request.POST.get('address')
-                    address.city = request.POST.get('city')
-                    address.state = request.POST.get('state')
-                    address.zip_code = request.POST.get('zip_code')
-                    address.latitude = (request.POST.get('latitude') or None)
-                    address.longitude = (request.POST.get('longitude') or None)
-                    address.save()
-                service_center.name = request.POST.get('name')
-                service_center.status = request.POST.get('status', 'active')
-                service_center.is_emergency_service = (request.POST.get('is_emergency_service') == 'on')
-                service_center.opening_hours = request.POST.get('opening_hours')
-                service_center.phone = request.POST.get('phone')
-                service_center.email = request.POST.get('email')
-                service_center.website = request.POST.get('website')
-                service_center.save()
-                ServiceAmenity.objects.filter(service=service_center).delete()
-                amenity_ids = request.POST.getlist('amenities')
-                for am_id in amenity_ids:
-                    try:
-                        amenity = Amenity.objects.get(id=am_id)
-                        ServiceAmenity.objects.create(service=service_center, amenity=amenity)
-                    except Amenity.DoesNotExist:
-                        continue
-            return redirect('admin-service-centers')
-        except Exception as e:
-            print(f'Error updating service center: {e}')
-            context = self.get_context_data()
-            context['error'] = str(e)
-            return render(request, self.template_name, context)
 
 class AdminServiceCenterDeleteView(AdminRequiredMixin, DeleteView):
     from stations.models import ServiceCenter

@@ -23,10 +23,6 @@
                         <h4 class="fw-bold mb-0">Service Management</h4>
                         <p class="text-muted mb-0 small">Manage service centers</p>
                     </div>
-                    <a href="{% url 'admin-add-service-center' %}"
-                        class="btn btn-emerald text-white fw-bold d-flex align-items-center gap-2">
-                        <i data-lucide="plus" class="w-4 h-4"></i> Add Service Center
-                    </a>
                 </div>
             </header>
             <div class="p-4">
@@ -108,10 +104,6 @@
                                                 <li><a class="dropdown-item"
                                                         href="{% url 'admin-service-center-detail' center.pk %}">View
                                                         Details</a></li>
-                                                <li><a class="dropdown-item"
-                                                        href="{% url 'admin-service-center-edit' center.pk %}">Edit
-                                                        Details</a></li>
-                                                <li>
                                                     <hr class="dropdown-divider">
                                                 </li>
                                                 <li><a class="dropdown-item text-danger" href="#" data-bs-toggle="modal"

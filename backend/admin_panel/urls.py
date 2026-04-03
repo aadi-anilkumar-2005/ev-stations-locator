@@ -2,10 +2,10 @@ from django.urls import path
 from django.views.generic import RedirectView
 from .views import (
     AdminLoginView, AdminLogoutView, AdminDashboardView, 
-    AdminShowroomsView, AdminAddShowroomView, AdminShowroomDetailView, AdminShowroomEditView, AdminShowroomDeleteView,
-    AdminServiceCentersView, AdminAddServiceCenterView, AdminServiceCenterDetailView, AdminServiceCenterEditView, AdminServiceCenterDeleteView,
+    AdminShowroomsView, AdminShowroomDetailView, AdminShowroomDeleteView,
+    AdminServiceCentersView, AdminServiceCenterDetailView, AdminServiceCenterDeleteView,
     AdminUsersView, AdminAddUserView, AdminEditUserView, AdminDeleteUserView, AdminSettingsView,
-    AdminBrandsView, AdminAddBrandView, AdminEditBrandView, AdminDeleteBrandView
+    AdminStationsView, AdminStationDetailView, AdminStationDeleteView
 )
 
 urlpatterns = [
@@ -14,22 +14,21 @@ urlpatterns = [
     path('logout/', AdminLogoutView.as_view(), name='admin-logout'),
     path('dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
     
-    # Stations (Migrated to charging_station)
-    path('brands/', AdminBrandsView.as_view(), name='admin-brands'),
-    path('brands/add/', AdminAddBrandView.as_view(), name='admin-add-brand'),
-    path('brands/<int:pk>/edit/', AdminEditBrandView.as_view(), name='admin-brand-edit'),
-    path('brands/<int:pk>/delete/', AdminDeleteBrandView.as_view(), name='admin-brand-delete'),
+    # Stations
+    path('stations/', AdminStationsView.as_view(), name='admin-stations'),
+    path('stations/<int:pk>/', AdminStationDetailView.as_view(), name='admin-station-detail'),
+    path('stations/<int:pk>/delete/', AdminStationDeleteView.as_view(), name='admin-station-delete'),
 
+    # Showrooms
     path('showrooms/', AdminShowroomsView.as_view(), name='admin-showrooms'),
-    path('showrooms/add/', AdminAddShowroomView.as_view(), name='admin-add-showroom'),
     path('showrooms/<int:pk>/', AdminShowroomDetailView.as_view(), name='admin-showroom-detail'),
-    path('showrooms/<int:pk>/edit/', AdminShowroomEditView.as_view(), name='admin-showroom-edit'),
     path('showrooms/<int:pk>/delete/', AdminShowroomDeleteView.as_view(), name='admin-showroom-delete'),
+    
+    # Service Centers
     path('service-centers/', AdminServiceCentersView.as_view(), name='admin-service-centers'),
-    path('service-centers/add/', AdminAddServiceCenterView.as_view(), name='admin-add-service-center'),
     path('service-centers/<int:pk>/', AdminServiceCenterDetailView.as_view(), name='admin-service-center-detail'),
-    path('service-centers/<int:pk>/edit/', AdminServiceCenterEditView.as_view(), name='admin-service-center-edit'),
     path('service-centers/<int:pk>/delete/', AdminServiceCenterDeleteView.as_view(), name='admin-service-center-delete'),
+    
     # Users
     path('users/', AdminUsersView.as_view(), name='admin-users'),
     path('users/add/', AdminAddUserView.as_view(), name='admin-add-user'),
