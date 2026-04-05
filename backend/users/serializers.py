@@ -163,6 +163,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             first_name=first_name,
             middle_name=middle_name,
             last_name=last_name,
+            role='customer',
         )
         
         # Save phone number to profile

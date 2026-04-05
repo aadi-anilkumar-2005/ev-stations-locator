@@ -28,10 +28,7 @@ class ServiceCenterDashboardView(ServiceRoleRequiredMixin, TemplateView):
                 'active_stations': 0,
                 'offline_stations': 0,
                 'managed_locations': user_service_centers.count(),
-                'active_amenities': Amenity.objects.filter(
-                    serviceamenity__service__in=user_service_centers,
-                    category='service'
-                ).distinct().count(),
+                'active_amenities': Amenity.objects.filter(category='service').count(),
             }
         else:
             # Admin sees all data
@@ -184,12 +181,8 @@ class ServiceAmenitiesListView(ServiceRoleRequiredMixin, ListView):
     context_object_name = 'amenities'
 
     def get_queryset(self):
-        queryset = Amenity.objects.filter(category='service')
-        # Filter by user if not admin - only show amenities used in user's service centers
-        if not self.request.user.is_staff and self.request.user.role != 'admin':
-            user_service_centers = ServiceCenter.objects.filter(created_by=self.request.user)
-            queryset = queryset.filter(serviceamenity__service__in=user_service_centers).distinct()
-        return queryset
+        # Amenities are shared lookup data — show all to every service portal user
+        return Amenity.objects.filter(category='service').order_by('name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

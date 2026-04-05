@@ -27,18 +27,11 @@ class ShowroomDashboardView(ShowroomRoleRequiredMixin, TemplateView):
             user_showrooms = Showroom.objects.filter(created_by=self.request.user)
             context['total_showrooms'] = user_showrooms.count()
             
-            # Get brands used in user's showrooms
-            user_brands = Brand.objects.filter(
-                showrooms__in=user_showrooms
-            ).distinct()
-            context['total_brands'] = user_brands.count()
+            # Show all brands (shared lookup data, no owner)
+            context['total_brands'] = Brand.objects.count()
             
-            # Get amenities used in user's showrooms
-            user_amenities = Amenity.objects.filter(
-                showroomamenity__showroom__in=user_showrooms,
-                category='showroom'
-            ).distinct()
-            context['total_amenities'] = user_amenities.count()
+            # Show all showroom amenities (shared lookup data)
+            context['total_amenities'] = Amenity.objects.filter(category='showroom').count()
         else:
             # Admin sees all data
             context['total_showrooms'] = Showroom.objects.count()
@@ -201,12 +194,8 @@ class BrandListView(ShowroomRoleRequiredMixin, ListView):
     context_object_name = 'brands'
 
     def get_queryset(self):
-        queryset = Brand.objects.all().order_by('name')
-        # Filter by user if not admin - only show brands used in user's showrooms
-        if not self.request.user.is_staff and self.request.user.role != 'admin':
-            user_showrooms = Showroom.objects.filter(created_by=self.request.user)
-            queryset = queryset.filter(showrooms__in=user_showrooms).distinct()
-        return queryset
+        # Brands are shared lookup data — show all to every showroom portal user
+        return Brand.objects.all().order_by('name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -272,12 +261,8 @@ class ShowroomAmenityListView(ShowroomRoleRequiredMixin, ListView):
     context_object_name = 'amenities'
 
     def get_queryset(self):
-        queryset = Amenity.objects.filter(category='showroom').order_by('name')
-        # Filter by user if not admin - only show amenities used in user's showrooms
-        if not self.request.user.is_staff and self.request.user.role != 'admin':
-            user_showrooms = Showroom.objects.filter(created_by=self.request.user)
-            queryset = queryset.filter(showroomamenity__showroom__in=user_showrooms).distinct()
-        return queryset
+        # Amenities are shared lookup data — show all to every showroom portal user
+        return Amenity.objects.filter(category='showroom').order_by('name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

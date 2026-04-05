@@ -24,23 +24,14 @@ class CSDashboardView(AdminRequiredMixin, TemplateView):
             user_stations = Station.objects.filter(created_by=self.request.user)
             context['total_stations'] = user_stations.count()
             
-            # Get charger types used in user's stations
-            user_charger_types = ChargerType.objects.filter(
-                station_links__station__in=user_stations
-            ).distinct()
-            context['total_charger_types'] = user_charger_types.count()
-            
-            # Get amenities used in user's stations
-            user_amenities = Amenity.objects.filter(
-                stationamenity__station__in=user_stations,
-                category='station'
-            ).distinct()
-            context['total_amenities'] = user_amenities.count()
+            # Charger types and amenities are shared lookup data — show all counts
+            context['total_charger_types'] = ChargerType.objects.count()
+            context['total_amenities'] = Amenity.objects.filter(category='station').count()
             
             # Get bookings for user's stations
             Booking.sync_statuses()
             context['total_bookings'] = Booking.objects.filter(
-                station__in=user_stations,
+                station_charger__station__in=user_stations,
                 status__in=['confirmed', 'completed']
             ).count()
         else:
@@ -214,12 +205,8 @@ class CSChargerTypeListView(AdminRequiredMixin, ListView):
     context_object_name = 'charger_types'
     
     def get_queryset(self):
-        queryset = ChargerType.objects.all().order_by('name')
-        # Filter by user if not admin - only show charger types used in user's stations
-        if not self.request.user.is_staff and self.request.user.role != 'admin':
-            user_stations = Station.objects.filter(created_by=self.request.user)
-            queryset = queryset.filter(station_links__station__in=user_stations).distinct()
-        return queryset
+        # ChargerTypes are shared lookup data — show all to every station portal user
+        return ChargerType.objects.all().order_by('name')
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -271,12 +258,8 @@ class CSAmenityListView(AdminRequiredMixin, ListView):
     context_object_name = 'amenities'
     
     def get_queryset(self):
-        queryset = Amenity.objects.filter(category='station').order_by('name')
-        # Filter by user if not admin - only show amenities used in user's stations
-        if not self.request.user.is_staff and self.request.user.role != 'admin':
-            user_stations = Station.objects.filter(created_by=self.request.user)
-            queryset = queryset.filter(stationamenity__station__in=user_stations).distinct()
-        return queryset
+        # Amenities are shared lookup data — show all to every station portal user
+        return Amenity.objects.filter(category='station').order_by('name')
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -330,7 +313,7 @@ class CSBookingListView(AdminRequiredMixin, ListView):
         if not self.request.user.is_staff and self.request.user.role != 'admin':
             # Station users can only see bookings for their stations
             user_stations = Station.objects.filter(created_by=self.request.user)
-            queryset = queryset.filter(station__in=user_stations)
+            queryset = queryset.filter(station_charger__station__in=user_stations)
         return queryset
         
     def get_context_data(self, **kwargs):
