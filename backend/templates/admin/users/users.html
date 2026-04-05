@@ -1,206 +1,725 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Users - ChargePoint Admin</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    {% load static %}
+    <title>User Management System</title>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{% static 'admin/css/style.css' %}">
     <script src="https://unpkg.com/lucide@latest"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-</head>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #0ea5e9, #0284c7);
+            --primary-hover: linear-gradient(135deg, #0284c7, #0369a1);
+            --bg-color: #f4f7fb;
+            --card-bg: rgba(255, 255, 255, 0.85);
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+        }
 
+        body {
+            background-color: var(--bg-color);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            position: relative;
+        }
+
+        /* Decorative Background Blobs */
+        .bg-blob {
+            position: fixed; 
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .blob-1 { top: -10%; left: 15%; width: 500px; height: 500px; background: #e0f2fe; }
+        .blob-2 { bottom: -10%; right: -5%; width: 600px; height: 600px; background: #ede9fe; }
+        .blob-3 { top: 40%; left: 50%; width: 400px; height: 400px; background: #fce7f3; opacity: 0.4; }
+        
+        /* Modern Header */
+        .app-header {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+            padding: 16px 0;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.02);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        /* Search Bar */
+        .search-box {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+        }
+        .search-box input {
+            padding-left: 2.8rem;
+            border-radius: 20px;
+            background: white;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        .search-box .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        /* Card & Table Enhancements */
+        .card {
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.03), inset 0 1px 0 rgba(255,255,255,1);
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .table > :not(caption) > * > * {
+            padding: 1.25rem 1rem;
+            vertical-align: middle;
+            border-bottom-color: rgba(226, 232, 240, 0.6);
+        }
+        
+        .table-light th {
+            background-color: rgba(248, 250, 252, 0.8);
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .table-hover tbody tr {
+            transition: all 0.3s ease;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: white;
+            transform: scale(1.002);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+            border-radius: 12px;
+        }
+
+        /* Badges */
+        .badge {
+            padding: 0.6em 1.2em;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .badge-role-admin { background-color: #fee2e2; color: #ef4444; border: 1px solid #fca5a5; }
+        .badge-role-station { background-color: #e0f2fe; color: #0ea5e9; border: 1px solid #7dd3fc; }
+        .badge-role-showroom { background-color: #ede9fe; color: #8b5cf6; border: 1px solid #c4b5fd; }
+        .badge-role-service { background-color: #ffedd5; color: #f97316; border: 1px solid #fdba74; }
+        .badge-role-customer { background-color: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+        
+        /* Avatars */
+        .avatar {
+            width: 45px; 
+            height: 45px;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            border: 2px solid white;
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            box-shadow: 0 4px 15px rgba(14, 165, 233, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(14, 165, 233, 0.4);
+            background: var(--primary-hover);
+        }
+        
+        .action-btn {
+            width: 38px;
+            height: 38px;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            margin-right: 6px;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        /* Filter Navigation */
+        .filters-container {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 6px;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+            display: inline-flex;
+            flex-wrap: wrap;
+            border: 1px solid rgba(255,255,255,0.6);
+            z-index: 1;
+            position: relative;
+        }
+        .nav-pills .nav-link {
+            color: var(--text-muted);
+            border-radius: 12px;
+            margin-right: 5px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1.2rem;
+            cursor: pointer;
+        }
+        .nav-pills .nav-link:hover {
+            background-color: rgba(241, 245, 249, 0.8);
+            color: var(--text-main);
+        }
+        .nav-pills .nav-link.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(14, 165, 233, 0.25);
+        }
+        
+        /* Status */
+        .status-dot {
+            height: 8px;
+            width: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.8);
+        }
+        .status-active { background-color: #10b981; box-shadow: 0 0 0 3px #d1fae5; }
+        .status-inactive { background-color: #ef4444; box-shadow: 0 0 0 3px #fee2e2; }
+        
+        /* Success Toast Notification */
+        .success-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+            z-index: 2000;
+            transform: translateX(120%);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-weight: 600;
+        }
+        .success-toast.show {
+            transform: translateX(0);
+        }
+
+        /* Modals & Inputs */
+        .modal-content {
+            border-radius: 24px;
+            border: 1px solid rgba(255,255,255,0.8);
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.1);
+        }
+        .modal-header {
+            border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+            padding: 1.5rem 2rem;
+        }
+        .modal-body {
+            padding: 2rem;
+        }
+        .modal-footer {
+            border-top: 1px solid rgba(226, 232, 240, 0.6);
+            padding: 1.25rem 2rem;
+            background: rgba(248, 250, 252, 0.5);
+            border-bottom-left-radius: 24px;
+            border-bottom-right-radius: 24px;
+        }
+        .form-label {
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        .form-control, .input-group-text {
+            border-radius: 12px;
+            padding: 0.85rem 1.2rem;
+            border: 1px solid #cbd5e1;
+            background-color: #f8fafc;
+            color: var(--text-main);
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            background-color: #ffffff;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
+        }
+        .input-group .btn {
+            border-radius: 12px;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+            border: 1px solid #cbd5e1;
+            border-left: none;
+            background-color: #f8fafc;
+            color: var(--text-muted);
+            padding: 0 1.2rem;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 991.98px) {
+            .filters-container {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                -webkit-overflow-scrolling: touch;
+            }
+            .nav-pills .nav-link {
+                white-space: nowrap;
+            }
+            .search-box {
+                max-width: 100%;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
 <body class="bg-light">
+
+    <!-- Decorative Background -->
+    <div class="bg-blob blob-1"></div>
+    <div class="bg-blob blob-2"></div>
+    <div class="bg-blob blob-3"></div>
+
+    <!-- Success Pop Notification -->
+    <div class="success-toast" id="successToast">
+        <i class="bi bi-check-circle-fill fs-5"></i>
+        <span id="toastMessage">Action completed successfully!</span>
+    </div>
+
+    <!-- Main Content Wrapper -->
     <div class="d-flex">
+        <!-- Sidebar dynamically included -->
         <div id="sidebar-container">
             {% include 'admin/includes/sidebar.html' %}
         </div>
-        <main class="flex-grow-1 overflow-auto vh-100">
-            <header class="bg-white border-bottom px-4 py-3 sticky-top">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4 class="fw-bold mb-0">User Management</h4>
-                        <p class="text-muted mb-0 small">View and manage user accounts</p>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a href="{% url 'admin-add-user' %}"
-                            class="btn btn-emerald text-white fw-bold d-flex align-items-center gap-2">
-                            <i data-lucide="plus" class="w-4 h-4"></i> Add User
-                        </a>
-                        <!-- Export button hidden or can be kept if implemented -->
-                        <button class="btn btn-emerald text-white fw-bold d-flex align-items-center gap-2">
-                            <i data-lucide="download" class="w-4 h-4"></i> Export
-                        </button>
+        
+        <main class="flex-grow-1 overflow-auto vh-100" style="position: relative; z-index: 1;">
+            
+            <!-- Modern Header -->
+            <header class="app-header">
+                <div class="container-fluid px-4">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <h4 class="mb-0 fw-bold" style="color: var(--text-main);">
+                                Users Overview
+                            </h4>
+                        </div>
                     </div>
                 </div>
             </header>
-            <div class="p-4">
-                <div class="row g-4 mb-4" id="users-stats">
-                    <div class="col-md-4">
-                        <div class="card border-0 shadow-sm p-3 rounded-4">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="p-2 rounded-3 bg-primary-subtle text-primary"><i data-lucide="users"></i>
-                                </div>
-                                <div>
-                                    <div class="h5 fw-bold mb-0">{{ stats.total }}</div>
-                                    <div class="small text-muted">Total Users</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card border-0 shadow-sm p-3 rounded-4">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="p-2 rounded-3 bg-success-subtle text-success"><i
-                                        data-lucide="user-check"></i></div>
-                                <div>
-                                    <div class="h5 fw-bold mb-0">{{ stats.active }}</div>
-                                    <div class="small text-muted">Active Users</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card border-0 shadow-sm p-3 rounded-4">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="p-2 rounded-3 bg-warning-subtle text-warning"><i data-lucide="user-x"></i>
-                                </div>
-                                <div>
-                                    <div class="h5 fw-bold mb-0">{{ stats.inactive }}</div>
-                                    <div class="small text-muted">Inactive Users</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="card border-0 shadow-sm rounded-4">
-                    <div class="card-body border-bottom p-4">
-                        <form method="get" class="row g-3">
-                            <div class="col-md-8">
-                                <div class="input-group">
-                                    <button class="input-group-text bg-white border-end-0"><i data-lucide="search"
-                                            class="w-4 h-4 text-muted"></i></button>
-                                    <input type="text" name="search" class="form-control border-start-0 ps-0"
-                                        placeholder="Search users..." value="{{ request.GET.search|default:'' }}">
-                                </div>
-                            </div>
-                            <div class="col-md-4">
-                                <select name="status" class="form-select" onchange="this.form.submit()">
-                                    <option value="all" {% if request.GET.status == 'all' %}selected{% endif %}>All Users
-                                    </option>
-                                    <option value="active" {% if request.GET.status == 'active' %}selected{% endif %}>
-                                        Active</option>
-                                    <option value="inactive" {% if request.GET.status == 'inactive' %}selected{% endif %}>
-                                        Inactive</option>
-                                </select>
-                            </div>
-                        </form>
+            <!-- Page Content -->
+            <div class="container-fluid px-4 pb-5">
+                
+                {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <strong>{{ message }}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="bg-light">
-                                <tr>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">User</th>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Email</th>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Status</th>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Phone Number</th>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Joined</th>
-                                    <th class="px-4 py-3 text-secondary text-uppercase small">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-table-body">
-                                {% for user in users %}
-                                <tr>
-                                    <td class="px-4">
-                                        <div class="d-flex align-items-center gap-3">
-                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center small fw-bold"
-                                                style="width:36px; height:36px;">
-                                                {{ user.full_name|default:user.username|slice:":2"|upper }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Controls, Search & Filters -->
+                <form method="get" action="{% url 'admin-users' %}" id="filterForm">
+                    <input type="hidden" name="status" id="statusInput" value="{{ current_status }}">
+                    <input type="hidden" name="role" id="roleInput" value="{{ current_role }}">
+
+                    <div class="row mb-4 align-items-center gap-3 gap-xl-0">
+                        <div class="col-xl-6">
+                            <div class="filters-container w-100 w-xl-auto">
+                                <ul class="nav nav-pills flex-nowrap flex-xl-wrap" id="roleFilter">
+                                    <li class="nav-item">
+                                        <a class="nav-link {% if current_role == 'all' %}active{% endif %}" onclick="setRoleFilter('all'); return false;">All Users</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link {% if current_role == 'admin' %}active{% endif %}" onclick="setRoleFilter('admin'); return false;">Admin</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link {% if current_role == 'station' %}active{% endif %}" onclick="setRoleFilter('station'); return false;">Station</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link {% if current_role == 'showroom' %}active{% endif %}" onclick="setRoleFilter('showroom'); return false;">Showroom</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link {% if current_role == 'service' %}active{% endif %}" onclick="setRoleFilter('service'); return false;">Service</a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a class="nav-link {% if current_role == 'customer' %}active{% endif %}" onclick="setRoleFilter('customer'); return false;">Customer</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="col-xl-6">
+                            <div class="d-flex flex-column flex-sm-row justify-content-xl-end align-items-sm-center gap-3">
+                                <!-- Search Box -->
+                                <div class="search-box">
+                                    <i class="bi bi-search search-icon"></i>
+                                    <input type="text" name="search" id="searchInput" value="{{ current_search }}" class="form-control" placeholder="Search users...">
+                                </div>
+                                <button type="submit" class="d-none">Search</button>
+                                
+                                <!-- Add Admin Button -->
+                                <button type="button" class="btn btn-primary px-4 py-2 fw-bold rounded-pill text-nowrap" onclick="openAddAdminModal()">
+                                    <i class="bi bi-person-plus-fill me-2"></i> Add Admin
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Users Table Card -->
+                <div class="card position-relative">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th class="ps-4">User Details</th>
+                                        <th>Role</th>
+                                        <th>Status</th>
+                                        <th>Join Date</th>
+                                        <th class="text-end pe-4">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="userTableBody">
+                                    {% for user_obj in users %}
+                                    <tr>
+                                        <td class="ps-4">
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar rounded-circle d-flex justify-content-center align-items-center me-3 user-avatar" data-role="{{ user_obj.role|default:'customer' }}">
+                                                    <span class="fw-bold fs-5">{{ user_obj.full_name|default:user_obj.username|make_list|first|upper }}</span>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold text-dark mb-1" style="font-size: 0.95rem;">{{ user_obj.full_name|default:user_obj.username }}</div>
+                                                    <div class="text-muted small d-flex align-items-center">
+                                                        <i class="bi bi-envelope me-1 opacity-50"></i>{{ user_obj.email }}
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <div class="fw-bold text-dark">{{ user.full_name|default:user.username }}</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-role-{{ user_obj.role|default:'customer' }} rounded-pill px-3 py-1 fw-semibold" style="font-size: 0.75rem;">
+                                                {{ user_obj.role|default:'customer'|title }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="d-flex align-items-center fw-semibold" style="font-size: 0.85rem; color: #475569;">
+                                                <span class="status-dot {% if user_obj.is_active %}status-active{% else %}status-inactive{% endif %}"></span>
+                                                {% if user_obj.is_active %}Active{% else %}Inactive{% endif %}
+                                            </span>
+                                        </td>
+                                        <td class="text-muted small fw-medium">
+                                            <i class="bi bi-calendar3 me-1 opacity-50"></i> {{ user_obj.date_joined|date:"M d, Y" }}
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <div class="d-flex justify-content-end align-items-center">
+                                                <button class="action-btn border text-primary" 
+                                                    title="View Details"
+                                                    onclick="viewUser(
+                                                        '{{ user_obj.id }}', 
+                                                        '{{ user_obj.full_name|default:user_obj.username|escapejs }}', 
+                                                        '{{ user_obj.email|escapejs }}', 
+                                                        '{% if user_obj.role %}{{ user_obj.role|escapejs }}{% else %}customer{% endif %}',
+                                                        '{% if user_obj.profile.phone_number %}{{ user_obj.profile.phone_number|escapejs }}{% endif %}',
+                                                        '{% if user_obj.is_active %}active{% else %}inactive{% endif %}',
+                                                        '{% if user_obj.date_joined %}{{ user_obj.date_joined|date:'M d, Y'|escapejs }}{% endif %}'
+                                                    )">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <form method="post" action="{% url 'admin-user-toggle-status' user_obj.id %}" style="display:inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="action-btn border {% if user_obj.is_active %}text-warning{% else %}text-success bg-success bg-opacity-10 border-success{% endif %}" title="{% if user_obj.is_active %}Deactivate{% else %}Activate{% endif %}">
+                                                        <i class="bi {% if user_obj.is_active %}bi-power{% else %}bi-arrow-clockwise{% endif %}"></i>
+                                                    </button>
+                                                </form>
+                                                <button class="action-btn border text-danger mb-0 me-0 bg-danger bg-opacity-10 border-danger" onclick="confirmDelete('{{ user_obj.id }}')" title="Delete">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
                                             </div>
-                                        </div>
-                                    </td>
-                                    <td class="px-4 small">{{ user.email }}</td>
-                                    <td class="px-4">
-                                        {% if user.is_active %}
-                                        <span class="badge rounded-pill badge-emerald text-capitalize">Active</span>
-                                        {% else %}
-                                        <span
-                                            class="badge rounded-pill bg-secondary-subtle text-secondary text-capitalize">Inactive</span>
-                                        {% endif %}
-                                    </td>
-                                    <td class="px-4 small">{{ user.profile.phone_number|default:"-" }}</td>
-                                    <td class="px-4 small text-muted">{{ user.date_joined|date:"M d, Y" }}</td>
-                                    <td class="px-4">
-                                        <div class="d-flex gap-2">
-                                            <a href="{% url 'admin-user-edit' user.pk %}" class="btn btn-sm btn-light">
-                                                <i data-lucide="edit-2" class="w-4 h-4"></i>
-                                            </a>
-                                            <button data-url="{% url 'admin-user-delete' user.pk %}"
-                                                data-username="{{ user.full_name|default:user.username }}"
-                                                onclick="confirmDelete(this.dataset.url, this.dataset.username)"
-                                                class="btn btn-sm btn-light text-danger border-0">
-                                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="6" class="text-center py-4 text-muted">No users found.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="p-0 border-0">
+                                            <!-- Empty State -->
+                                            <div id="emptyState" class="text-center py-5">
+                                                <div class="mb-3 position-relative d-inline-block">
+                                                    <div class="bg-primary bg-opacity-10 rounded-circle position-absolute top-50 start-50 translate-middle" style="width: 120px; height: 120px; z-index: -1;"></div>
+                                                    <i class="bi bi-search text-primary" style="font-size: 4rem; opacity: 0.5;"></i>
+                                                </div>
+                                                <h5 class="fw-bold mt-4" style="color: var(--text-main);">No users found</h5>
+                                                <p class="text-muted">There are no users matching the selected filters or search query.</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
+            
         </main>
     </div>
 
-    <!-- Hidden CSRF Token for JS -->
-    {% csrf_token %}
+    <!-- ADD ADMIN MODAL -->
+    <div class="modal fade" id="addAdminModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Create User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form action="{% url 'admin-add-user' %}" method="post" id="addAdminForm">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase">Full Name</label>
+                            <input type="text" class="form-control" name="full_name" id="adminName" required placeholder="e.g., John Doe">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase">Email Address</label>
+                            <input type="email" class="form-control" name="email" id="adminEmail" required placeholder="user@system.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase">Phone Number</label>
+                            <input type="tel" class="form-control" name="phone_number" id="adminPhone" placeholder="+1 (555) 000-0000">
+                        </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-uppercase">Secure Password</label>
+                            <div class="input-group">
+                                <input type="password" name="password" class="form-control border-end-0" id="adminPassword" required placeholder="Create a strong password">
+                                <button class="btn border-start-0" type="button" id="togglePasswordBtn">
+                                    <i class="bi bi-eye-slash" id="togglePasswordIcon"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0">
+                        <button type="button" class="btn btn-light border bg-white text-dark fw-semibold px-4" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary fw-semibold px-4">Create User</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW USER MODAL -->
+    <div class="modal fade" id="viewUserModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0 d-flex justify-content-end">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body pt-0">
+                    <div class="text-center mb-4">
+                        <div id="viewAvatar" class="avatar rounded-circle d-inline-flex justify-content-center align-items-center mb-3" style="width: 100px; height: 100px; font-size: 2.5rem; font-weight: bold; border-width: 4px;"></div>
+                        <h4 id="viewName" class="fw-bold mb-1">User Name</h4>
+                        <span id="viewRole" class="badge mt-2">Role</span>
+                    </div>
+                    <div class="mt-4">
+                        <div class="details-list-item p-3 d-flex align-items-center shadow-sm" style="background: white; border-radius: 16px; margin-bottom: 12px; border: 1px solid #f1f5f9;">
+                            <div class="icon-box bg-primary bg-opacity-10 text-primary me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 10px;"><i class="bi bi-envelope-fill"></i></div>
+                            <div class="flex-grow-1">
+                                <span class="d-block text-muted small fw-semibold text-uppercase tracking-wide">Email Address</span>
+                                <strong id="viewEmail" class="text-dark">email@example.com</strong>
+                            </div>
+                        </div>
+                        <div class="details-list-item p-3 d-flex align-items-center shadow-sm" style="background: white; border-radius: 16px; margin-bottom: 12px; border: 1px solid #f1f5f9;">
+                            <div class="icon-box bg-success bg-opacity-10 text-success me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 10px;"><i class="bi bi-telephone-fill"></i></div>
+                            <div class="flex-grow-1">
+                                <span class="d-block text-muted small fw-semibold text-uppercase tracking-wide">Phone Number</span>
+                                <strong id="viewPhone" class="text-dark">+1 234 567 890</strong>
+                            </div>
+                        </div>
+                        <div class="details-list-item p-3 d-flex align-items-center shadow-sm" style="background: white; border-radius: 16px; margin-bottom: 12px; border: 1px solid #f1f5f9;">
+                            <div class="icon-box bg-warning bg-opacity-10 text-warning me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 10px;"><i class="bi bi-activity"></i></div>
+                            <div class="flex-grow-1">
+                                <span class="d-block text-muted small fw-semibold text-uppercase tracking-wide">Account Status</span>
+                                <strong id="viewStatus">Active</strong>
+                            </div>
+                        </div>
+                        <div class="details-list-item p-3 d-flex align-items-center shadow-sm mb-0" style="background: white; border-radius: 16px; border: 1px solid #f1f5f9;">
+                            <div class="icon-box bg-info bg-opacity-10 text-info me-3 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px; border-radius: 10px;"><i class="bi bi-calendar3"></i></div>
+                            <div class="flex-grow-1">
+                                <span class="d-block text-muted small fw-semibold text-uppercase tracking-wide">Date Joined</span>
+                                <strong id="viewDate" class="text-dark">2023-01-01</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content text-center px-3 py-4">
+                <div class="mb-3 mt-2">
+                    <div class="d-inline-flex justify-content-center align-items-center bg-danger bg-opacity-10 rounded-circle" style="width: 90px; height: 90px;">
+                        <i class="bi bi-trash3-fill text-danger" style="font-size: 2.8rem;"></i>
+                    </div>
+                </div>
+                <h4 class="fw-bold mb-2">Delete User?</h4>
+                <p class="text-muted mb-4 small px-2">Are you sure you want to delete this user? This action is permanent and cannot be undone.</p>
+                
+                <form method="post" id="deleteForm">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-center gap-3">
+                        <button type="button" class="btn btn-light border bg-white fw-semibold flex-grow-1 py-2" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger fw-semibold flex-grow-1 py-2">Yes, Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Application Logic -->
     <script>
-        lucide.createIcons();
+        const addAdminModal = new bootstrap.Modal(document.getElementById('addAdminModal'));
+        const viewUserModal = new bootstrap.Modal(document.getElementById('viewUserModal'));
+        const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
 
-        function confirmDelete(deleteUrl, userName) {
-            Swal.fire({
-                title: 'Delete User?',
-                html: `Are you sure you want to delete <b>${userName}</b>?<br>This action cannot be undone.`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#10b981',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, delete it!',
-                cancelButtonText: 'Cancel',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Create and submit form programmatically
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = deleteUrl;
-
-                    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-                    const csrfInput = document.createElement('input');
-                    csrfInput.type = 'hidden';
-                    csrfInput.name = 'csrfmiddlewaretoken';
-                    csrfInput.value = csrfToken;
-
-                    form.appendChild(csrfInput);
-                    document.body.appendChild(form);
-                    form.submit();
-                }
-            })
+        // Initialize application
+        function init() {
+            setupPasswordToggle();
+            applyAvatarGradients();
+            lucide.createIcons();
         }
+
+        // Apply Avatar Gradients
+        function applyAvatarGradients() {
+            document.querySelectorAll('.user-avatar').forEach(avatar => {
+                const role = avatar.getAttribute('data-role');
+                avatar.style.background = getAvatarGradient(role);
+            });
+        }
+
+        function getAvatarGradient(role) {
+            switch(role) {
+                case 'admin': return 'linear-gradient(135deg, #f43f5e, #e11d48)';
+                case 'station': return 'linear-gradient(135deg, #38bdf8, #0284c7)';
+                case 'showroom': return 'linear-gradient(135deg, #818cf8, #4f46e5)';
+                case 'service': return 'linear-gradient(135deg, #fb923c, #ea580c)';
+                case 'customer': return 'linear-gradient(135deg, #94a3b8, #64748b)';
+                default: return 'linear-gradient(135deg, #64748b, #475569)';
+            }
+        }
+        
+        function getRoleBadgeClass(role) {
+            return `badge badge-role-${role}`;
+        }
+
+        function setRoleFilter(role) {
+            document.getElementById('roleInput').value = role;
+            document.getElementById('filterForm').submit();
+        }
+
+        // Setup toggle for password visibility
+        function setupPasswordToggle() {
+            const toggleBtn = document.getElementById('togglePasswordBtn');
+            const passInput = document.getElementById('adminPassword');
+            const toggleIcon = document.getElementById('togglePasswordIcon');
+            
+            toggleBtn.addEventListener('click', () => {
+                if (passInput.type === 'password') {
+                    passInput.type = 'text';
+                    toggleIcon.classList.remove('bi-eye-slash');
+                    toggleIcon.classList.add('bi-eye');
+                } else {
+                    passInput.type = 'password';
+                    toggleIcon.classList.remove('bi-eye');
+                    toggleIcon.classList.add('bi-eye-slash');
+                }
+            });
+        }
+
+        // Add Admin Logic
+        function openAddAdminModal() {
+            document.getElementById('addAdminForm').reset();
+            const passInput = document.getElementById('adminPassword');
+            const toggleIcon = document.getElementById('togglePasswordIcon');
+            passInput.type = 'password';
+            toggleIcon.className = 'bi bi-eye-slash';
+            addAdminModal.show();
+        }
+
+        // View Logic
+        function viewUser(id, name, email, role, phone, status, dateJoined) {
+            document.getElementById('viewName').innerText = name;
+            
+            const viewAvatar = document.getElementById('viewAvatar');
+            viewAvatar.style.background = getAvatarGradient(role);
+            viewAvatar.innerText = name ? name.charAt(0).toUpperCase() : '?';
+            
+            const roleBadge = document.getElementById('viewRole');
+            roleBadge.className = `badge rounded-pill px-3 py-1 fw-bold shadow-sm ${getRoleBadgeClass(role)}`;
+            roleBadge.innerText = role ? role.charAt(0).toUpperCase() + role.slice(1) : 'Unknown';
+
+            document.getElementById('viewEmail').innerText = email || 'N/A';
+            document.getElementById('viewPhone').innerText = phone || 'N/A'; 
+            document.getElementById('viewDate').innerText = dateJoined;
+
+            const statusEl = document.getElementById('viewStatus');
+            statusEl.innerText = status === 'active' ? 'Active Account' : 'Inactive Account';
+            statusEl.className = status === 'active' ? 'text-success fw-bold' : 'text-danger fw-bold';
+
+            viewUserModal.show();
+        }
+
+        // Delete Logic
+        function confirmDelete(id) {
+            const form = document.getElementById('deleteForm');
+            // Update the form action dynamically based on id
+            form.action = `/admin/users/${id}/delete/`; 
+            deleteModal.show();
+        }
+
+        // Run setup
+        document.addEventListener("DOMContentLoaded", init);
+
     </script>
 </body>
-
 </html>

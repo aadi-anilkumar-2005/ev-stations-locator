@@ -17,6 +17,4 @@ urlpatterns = [
     path('location/update/', LocationUpdateView.as_view(), name='location_update'),
     path('location/current/', LocationCurrentView.as_view(), name='location_current'),
     path('profile/', ProfileView.as_view(), name='user_profile'),
-
-
 ]

@@ -4,13 +4,18 @@ from .views import (
     AdminLoginView, AdminLogoutView, AdminDashboardView, 
     AdminShowroomsView, AdminShowroomDetailView, AdminShowroomDeleteView,
     AdminServiceCentersView, AdminServiceCenterDetailView, AdminServiceCenterDeleteView,
-    AdminUsersView, AdminAddUserView, AdminEditUserView, AdminDeleteUserView, AdminSettingsView,
-    AdminStationsView, AdminStationDetailView, AdminStationDeleteView
+    AdminUsersView, AdminAddUserView, AdminDeleteUserView, AdminToggleUserStatusView, AdminSettingsView,
+    AdminStationsView, AdminStationDetailView, AdminStationDeleteView,
+    PartnerRegistrationCreateView,
+    AdminRegistrationApprovalListView, PartnerRegistrationApproveView, PartnerRegistrationRejectView
 )
 
 urlpatterns = [
     path('', RedirectView.as_view(pattern_name='admin-login', permanent=False), name='admin-root'),
     path('login/', AdminLoginView.as_view(), name='admin-login'),
+
+    path('partner-register/', PartnerRegistrationCreateView.as_view(), name='partner_register'),
+    
     path('logout/', AdminLogoutView.as_view(), name='admin-logout'),
     path('dashboard/', AdminDashboardView.as_view(), name='admin-dashboard'),
     
@@ -29,10 +34,16 @@ urlpatterns = [
     path('service-centers/<int:pk>/', AdminServiceCenterDetailView.as_view(), name='admin-service-center-detail'),
     path('service-centers/<int:pk>/delete/', AdminServiceCenterDeleteView.as_view(), name='admin-service-center-delete'),
     
-    # Users
+    # User Management
     path('users/', AdminUsersView.as_view(), name='admin-users'),
     path('users/add/', AdminAddUserView.as_view(), name='admin-add-user'),
-    path('users/<int:pk>/edit/', AdminEditUserView.as_view(), name='admin-user-edit'),
     path('users/<int:pk>/delete/', AdminDeleteUserView.as_view(), name='admin-user-delete'),
+    path('users/<int:pk>/toggle-status/', AdminToggleUserStatusView.as_view(), name='admin-user-toggle-status'),
+    
     path('settings/', AdminSettingsView.as_view(), name='admin-settings'),
+    
+    # Approvals
+    path('approvals/', AdminRegistrationApprovalListView.as_view(), name='admin_approvals'),
+    path('approvals/<str:pk>/approve/', PartnerRegistrationApproveView.as_view(), name='admin_approve_registration'),
+    path('approvals/<str:pk>/reject/', PartnerRegistrationRejectView.as_view(), name='admin_reject_registration'),
 ]

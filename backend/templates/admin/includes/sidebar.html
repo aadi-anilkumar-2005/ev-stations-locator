@@ -41,6 +41,12 @@
             </a>
         </li>
         <li>
+            <a href="{% url 'admin_approvals' %}"
+                class="nav-link {% if 'admin_approvals' in request.resolver_match.url_name or 'admin_approve' in request.resolver_match.url_name %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
+                <i data-lucide="clipboard-check" class="w-5 h-5"></i> Approvals
+            </a>
+        </li>
+        <li>
             <a href="{% url 'admin-settings' %}"
                 class="nav-link {% if request.resolver_match.url_name == 'admin-settings' %}active-nav-link text-white{% else %}text-secondary{% endif %} d-flex align-items-center gap-2 mb-2">
                 <i data-lucide="settings" class="w-5 h-5"></i> Settings

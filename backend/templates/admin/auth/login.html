@@ -4,63 +4,304 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Dashboard Portal</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>EV Hub - Dashboard Login</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     {% load static %}
     <link rel="stylesheet" href="{% static 'admin/css/style.css' %}">
-    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --primary: #059669;
+            --primary-dark: #047857;
+            --primary-light: #d1fae5;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --bg-body: #ffffff;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-body);
+            margin: 0;
+            padding: 0;
+            color: var(--text-main);
+            overflow-x: hidden;
+        }
+        
+        .full-screen-row {
+            min-height: 100vh;
+            margin: 0;
+            width: 100vw;
+        }
+
+        /* Left Branding Panel */
+        .brand-panel {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+            color: white;
+            padding: 4rem 10%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            min-height: 100vh;
+        }
+
+        .brand-panel::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 60%);
+            transform: rotate(30deg);
+        }
+
+        .brand-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Right Form Panel */
+        .form-panel {
+            padding: 4rem 8%;
+            background-color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .form-content-wrapper {
+            max-width: 500px;
+            width: 100%;
+            margin: 0 auto;
+        }
+
+        .form-label {
+            font-weight: 500;
+            font-size: 0.95rem;
+            color: #374151;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control {
+            padding: 0.8rem 1.2rem;
+            border: 1px solid #d1d5db;
+            background-color: #f9fafb;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .input-group-text {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .form-control:focus {
+            background-color: #ffffff;
+            border-color: var(--primary);
+            box-shadow: none; /* Removed default shadow to prevent weird input-group overlap */
+        }
+        
+        /* Custom focus ring for the whole input group */
+        .input-group:focus-within {
+            box-shadow: 0 0 0 4px var(--primary-light);
+            border-radius: 0.75rem;
+        }
+        
+        .input-group:focus-within .form-control,
+        .input-group:focus-within .input-group-text {
+            border-color: var(--primary);
+            background-color: #ffffff;
+        }
+
+        .btn-primary-custom {
+            background: var(--primary);
+            border: none;
+            color: white;
+            padding: 1rem;
+            font-weight: 600;
+            font-size: 1.05rem;
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px -1px rgba(5, 150, 105, 0.2), 0 2px 4px -1px rgba(5, 150, 105, 0.1);
+        }
+
+        .btn-primary-custom:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(5, 150, 105, 0.3), 0 4px 6px -2px rgba(5, 150, 105, 0.15);
+            color: white;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .error-box {
+            background-color: #fef2f2;
+            border-left: 4px solid #ef4444;
+            color: #b91c1c;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Responsive padding and heights adjustments */
+        @media (max-width: 991px) {
+            .brand-panel { 
+                padding: 4rem 2rem;
+                min-height: auto; 
+            }
+            .form-panel { 
+                padding: 3rem 2rem;
+                min-height: auto; 
+            }
+        }
+    </style>
 </head>
 
-<body class="bg-light">
-    <div id="login-screen" class="min-vh-100 d-flex align-items-center justify-content-center bg-dark-gradient">
-        <div class="card shadow-lg border-0 rounded-4" style="width: 100%; max-width: 450px;">
-            <div class="card-body p-5">
-                <div class="text-center mb-4">
-                    <div class="bg-emerald text-white rounded-3 d-inline-flex align-items-center justify-content-center mb-3 shadow"
-                        style="width: 64px; height: 64px;">
-                        <i data-lucide="lock" class="w-8 h-8"></i>
-                    </div>
-                    <h2 class="fw-bold mb-1">Dashboard Portal</h2>
-                    <p class="text-muted">Sign in to manage your locations and services</p>
+<body>
+
+    <div class="row g-0 full-screen-row">
+        
+        <!-- Left Branding Column (Full Screen Height) -->
+        <div class="col-lg-5 brand-panel d-none d-lg-flex">
+            <div class="brand-content text-center">
+                <div class="d-inline-flex align-items-center justify-content-center bg-white rounded-circle mb-4" style="width: 80px; height: 80px;">
+                    <i class="bi bi-ev-station-fill text-success" style="font-size: 3rem;"></i>
                 </div>
+                <h1 class="fw-bold mb-3 display-5">Welcome Back!</h1>
+                <p class="text-white-50 fs-5">Sign in to your EV Hub Dashboard to manage your charging stations, showrooms, and service centers efficiently.</p>
+            </div>
+            
+            <div class="brand-content mt-5 pt-5 text-center">
+                <p class="mb-0 text-white-50 small">&copy; 2024 EV Hub Connect. All rights reserved.</p>
+            </div>
+        </div>
+
+        <!-- Right Form Column (Full Screen Height) -->
+        <div class="col-lg-7 form-panel">
+            <div class="form-content-wrapper">
+                <div class="text-center text-lg-start mb-5">
+                    <h2 class="fw-bold text-dark mb-2">Dashboard Portal</h2>
+                    <p class="text-muted fs-6">Enter your credentials to access your account.</p>
+                </div>
+
                 <form id="login-form" method="post" action="{% url 'admin-login' %}">
                     {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label fw-medium text-secondary">Email Address</label>
-                        <input type="email" class="form-control form-control-lg fs-6" id="email" name="username"
-                            placeholder="user@example.com" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-medium text-secondary">Password</label>
-                        <input type="password" class="form-control form-control-lg fs-6" id="password" name="password"
-                            placeholder="••••••••" required>
-                    </div>
-                    {% if form.errors %}
-                    <div id="login-error" class="text-danger small mb-3">
-                        Invalid email or password.
-                    </div>
-                    {% endif %}
-                    {% if error %}
-                    <div id="login-error" class="text-danger small mb-3">
-                        {{ error }}
-                    </div>
-                    {% endif %}
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="rememberMe">
-                            <label class="form-check-label text-muted small" for="rememberMe">Remember me</label>
+                    
+                    <div class="mb-4">
+                        <label for="email" class="form-label">Email Address</label>
+                        <div class="input-group" style="border-radius: 0.75rem;">
+                            <span class="input-group-text border-end-0 rounded-start-4 text-muted px-3">
+                                <i class="bi bi-envelope"></i>
+                            </span>
+                            <input type="email" class="form-control border-start-0 rounded-end-4" id="email" name="username" placeholder="partner@evhub.com" required>
                         </div>
-                        <a href="#" class="text-emerald text-decoration-none small fw-bold">Forgot Password?</a>
                     </div>
-                    <button type="submit" class="btn btn-emerald w-100 py-3 rounded-3 fw-bold" id="login-btn">
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="input-group" style="border-radius: 0.75rem;">
+                            <span class="input-group-text border-end-0 rounded-start-4 text-muted px-3">
+                                <i class="bi bi-lock"></i>
+                            </span>
+                            <input type="password" class="form-control border-start-0 border-end-0" id="password" name="password" placeholder="••••••••" required>
+                            <span class="input-group-text border-start-0 rounded-end-4 text-muted px-3" id="togglePasswordBtn" style="cursor: pointer;" title="Toggle Password Visibility">
+                                <i class="bi bi-eye-slash" id="togglePasswordIcon"></i>
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Error Handling block using Django tags -->
+                    {% if form.errors %}
+                    <div class="error-box mb-4">
+                        <i class="bi bi-exclamation-circle me-1"></i> Invalid email or password.
+                    </div>
+                    {% endif %}
+                    
+                    {% if error %}
+                    <div class="error-box mb-4">
+                        <i class="bi bi-exclamation-triangle me-1"></i> {{ error }}
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between align-items-center mb-5 pb-2">
+                        <div class="form-check">
+                            <input class="form-check-input shadow-none" type="checkbox" id="rememberMe">
+                            <label class="form-check-label text-muted small" style="cursor: pointer;" for="rememberMe">Remember me</label>
+                        </div>
+                        <a href="#" class="text-decoration-none small fw-semibold" style="color: var(--primary);">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" class="btn w-100 btn-primary-custom py-3" id="login-btn">
                         <span class="normal-text">Sign In to Dashboard</span>
-                        <span class="loading-text d-none">Signing in...</span>
+                        <span class="loading-text d-none">
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Signing in...
+                        </span>
                     </button>
+                    
+                    <div class="mt-5 text-center">
+                        <p class="text-muted small">Don't have an account? <a href="#" style="color: var(--primary);" class="text-decoration-none fw-semibold">Register your business</a></p>
+                    </div>
                 </form>
             </div>
         </div>
+
     </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="{% static 'admin/js/auth.js' %}?v=2"></script>
+    
+    <!-- Custom UI Interactions -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            
+            // Password Visibility Toggle Logic
+            const togglePasswordBtn = document.getElementById('togglePasswordBtn');
+            const passwordInput = document.getElementById('password');
+            const togglePasswordIcon = document.getElementById('togglePasswordIcon');
+
+            togglePasswordBtn.addEventListener('click', function () {
+                // Toggle the type attribute
+                const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
+                passwordInput.setAttribute('type', type);
+                
+                // Toggle the icon
+                if (type === 'text') {
+                    togglePasswordIcon.classList.remove('bi-eye-slash');
+                    togglePasswordIcon.classList.add('bi-eye');
+                } else {
+                    togglePasswordIcon.classList.remove('bi-eye');
+                    togglePasswordIcon.classList.add('bi-eye-slash');
+                }
+            });
+
+            // Loading state for login button
+            document.getElementById('login-form').addEventListener('submit', function() {
+                const btn = document.getElementById('login-btn');
+                btn.querySelector('.normal-text').classList.add('d-none');
+                btn.querySelector('.loading-text').classList.remove('d-none');
+                btn.style.opacity = '0.8';
+                btn.style.pointerEvents = 'none';
+            });
+            
+        });
+    </script>
 </body>
 
 </html>

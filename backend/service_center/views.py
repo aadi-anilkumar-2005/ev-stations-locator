@@ -18,17 +18,35 @@ class ServiceCenterDashboardView(ServiceRoleRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        total_stations = Station.objects.count()
-        active_stations = Station.objects.filter(status='active').count()
-        offline_stations = Station.objects.filter(status='offline').count()
         
-        context['dashboard_stats'] = {
-            'total_stations': total_stations,
-            'active_stations': active_stations,
-            'offline_stations': offline_stations,
-            'managed_locations': ServiceCenter.objects.count(),
-            'active_amenities': Amenity.objects.filter(category='service').count(),
-        }
+        # Filter statistics by user if not admin
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            user_service_centers = ServiceCenter.objects.filter(created_by=self.request.user)
+            
+            context['dashboard_stats'] = {
+                'total_stations': 0,  # Service users don't manage stations
+                'active_stations': 0,
+                'offline_stations': 0,
+                'managed_locations': user_service_centers.count(),
+                'active_amenities': Amenity.objects.filter(
+                    serviceamenity__service__in=user_service_centers,
+                    category='service'
+                ).distinct().count(),
+            }
+        else:
+            # Admin sees all data
+            total_stations = Station.objects.count()
+            active_stations = Station.objects.filter(status='active').count()
+            offline_stations = Station.objects.filter(status='offline').count()
+            
+            context['dashboard_stats'] = {
+                'total_stations': total_stations,
+                'active_stations': active_stations,
+                'offline_stations': offline_stations,
+                'managed_locations': ServiceCenter.objects.count(),
+                'active_amenities': Amenity.objects.filter(category='service').count(),
+            }
+        
         context['active_page'] = 'dashboard'
         return context
 
@@ -39,10 +57,12 @@ class ServiceLocationsListView(ServiceRoleRequiredMixin, ListView):
     template_name = 'service_center/locations_page.html'
     context_object_name = 'locations'
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['active_page'] = 'locations'
-        return context
+    def get_queryset(self):
+        queryset = ServiceCenter.objects.select_related('address', 'created_by')
+        # Filter by user if not admin
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            queryset = queryset.filter(created_by=self.request.user)
+        return queryset
 
 class ServiceLocationCreateView(ServiceRoleRequiredMixin, TemplateView):
     template_name = 'service_center/location_form_page.html'
@@ -73,7 +93,8 @@ class ServiceLocationCreateView(ServiceRoleRequiredMixin, TemplateView):
                     phone=request.POST.get('phone'),
                     email=request.POST.get('email'),
                     website=request.POST.get('website'),
-                    address=address
+                    address=address,
+                    created_by=request.user
                 )
                 # Save selected amenities
                 amenity_ids = request.POST.getlist('amenities')
@@ -95,20 +116,17 @@ class ServiceLocationUpdateView(ServiceRoleRequiredMixin, UpdateView):
     fields = ['name']
     pk_url_kwarg = 'pk'
 
-    def get_object(self, queryset=None):
-        return ServiceCenter.objects.get(service_id=self.kwargs['pk'])
-    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['active_page'] = 'locations'
-        context['is_edit'] = True
-        sc = self.get_object()
-        context['location'] = sc
-        context['amenities'] = Amenity.objects.filter(category='service')
-        context['selected_amenities'] = list(
-            sc.service_amenities.values_list('amenity_id', flat=True)
-        )
         return context
+    
+    def get_object(self, queryset=None):
+        queryset = ServiceCenter.objects.select_related('address', 'created_by')
+        # Filter by user if not admin
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            queryset = queryset.filter(created_by=self.request.user)
+        return queryset.get(service_id=self.kwargs['pk'])
 
     def post(self, request, *args, **kwargs):
         sc = self.get_object()
@@ -149,6 +167,11 @@ class ServiceLocationUpdateView(ServiceRoleRequiredMixin, UpdateView):
 
 class ServiceLocationDeleteView(ServiceRoleRequiredMixin, View):
     def post(self, request, pk):
+        # Check if user has permission to delete this service center
+        if not request.user.is_staff and request.user.role != 'admin':
+            service_center = ServiceCenter.objects.filter(service_id=pk, created_by=request.user).first()
+            if not service_center:
+                return redirect('service-locations-list')  # Or show error
         ServiceCenter.objects.filter(service_id=pk).delete()
         return redirect('service-locations-list')
 
@@ -161,7 +184,12 @@ class ServiceAmenitiesListView(ServiceRoleRequiredMixin, ListView):
     context_object_name = 'amenities'
 
     def get_queryset(self):
-        return Amenity.objects.filter(category='service')
+        queryset = Amenity.objects.filter(category='service')
+        # Filter by user if not admin - only show amenities used in user's service centers
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            user_service_centers = ServiceCenter.objects.filter(created_by=self.request.user)
+            queryset = queryset.filter(serviceamenity__service__in=user_service_centers).distinct()
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Hub Admin - Registrations</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'admin/css/style.css' %}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        :root {
+            --primary: #059669;
+            --primary-dark: #047857;
+            --primary-light: #d1fae5;
+            --bg-light: #f8fafc;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+            --card-shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+/* Topbar */
+        .topbar {
+            background: white;
+            padding: 18px 35px;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .topbar .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 500;
+            padding: 6px 12px;
+            border-radius: 30px;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+
+        .topbar .user-profile:hover {
+            background: var(--bg-light);
+        }
+
+        .topbar .user-profile img {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Dashboard Cards */
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.02);
+            cursor: default;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-shadow-hover);
+        }
+
+        .stat-icon {
+            width: 65px;
+            height: 65px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover .stat-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .stat-info h3 {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            line-height: 1.2;
+        }
+
+        .stat-info p {
+            margin: 0 0 5px 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        /* Table Styles */
+        .table-card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            margin-top: 40px;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+        .table-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .search-box {
+            background: var(--bg-light);
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            padding: 5px 15px;
+            display: flex;
+            align-items: center;
+            width: 320px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px var(--primary-light);
+        }
+
+        .search-box input {
+            border: none;
+            background: transparent;
+            padding: 8px 10px;
+            width: 100%;
+            outline: none;
+            font-size: 0.9rem;
+        }
+
+        .search-box i {
+            color: var(--text-muted);
+        }
+
+        .badge-custom {
+            padding: 6px 12px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        /* Enhanced Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .status-pending {
+            background-color: #fffbeb;
+            color: #d97706;
+            border: 1px solid #fde68a;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: currentColor;
+            display: inline-block;
+        }
+
+        @keyframes pulse-dot {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .status-pending .status-dot {
+            animation: pulse-dot 2s infinite;
+        }
+        
+        .badge-category {
+            background-color: #f0f9ff;
+            color: #0284c7;
+            border: 1px solid #bae6fd;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .table {
+            margin-bottom: 0;
+        }
+
+        .table > :not(caption) > * > * {
+            padding: 1.2rem 1rem;
+            vertical-align: middle;
+            border-bottom-color: #f1f5f9;
+        }
+
+        .table > thead > tr > th {
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .table-hover tbody tr {
+            transition: background-color 0.2s ease;
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: #f8fafc;
+        }
+
+        /* Avatar Circle */
+        .avatar-circle {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        /* Enhanced Action Buttons */
+        .action-group {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+        }
+
+        .btn-icon-custom {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            color: #64748b;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .btn-icon-custom:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn-icon-custom.view:hover { background: #f0f9ff; color: #0284c7; border-color: #bae6fd; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.15); }
+        .btn-icon-custom.approve:hover { background: #f0fdf4; color: #16a34a; border-color: #bbf7d0; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.15); }
+        .btn-icon-custom.reject:hover { background: #fef2f2; color: #dc2626; border-color: #fecaca; box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15); }
+
+        /* General Modal Styles */
+        .modal-content {
+            border-radius: 20px;
+            overflow: hidden;
+            border: none;
+        }
+        
+        .modal-header {
+            background: linear-gradient(to right, #f8fafc, #ffffff);
+            border-bottom: 1px solid #e2e8f0;
+            padding: 20px 30px;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 1px solid #e2e8f0;
+            background: #f8fafc;
+        }
+
+        .btn-modal {
+            border-radius: 12px;
+            padding: 10px 24px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        /* View Details Info Blocks */
+        .info-block {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 24px;
+            height: 100%;
+            box-shadow: 0 4px 6px -4px rgba(0, 0, 0, 0.02);
+        }
+
+        .detail-row {
+            display: flex;
+            padding: 14px 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            width: 45%;
+            font-weight: 500;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        .detail-value {
+            width: 55%;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+        
+        .doc-preview {
+            background: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 16px;
+            padding: 30px 20px;
+            text-align: center;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .doc-preview:hover {
+            border-color: var(--primary);
+            background: #f0fdf4;
+        }
+
+        /* Animated Action Icons */
+        .icon-circle-lg {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+        }
+
+        @keyframes pulse-ring-success {
+            0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(22, 163, 74, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+        }
+
+        @keyframes pulse-ring-danger {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+            70% { box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+
+        .animate-success {
+            animation: pulse-ring-success 2s infinite cubic-bezier(0.66, 0, 0, 1);
+        }
+
+        .animate-danger {
+            animation: pulse-ring-danger 2s infinite cubic-bezier(0.66, 0, 0, 1);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Main Layout with Sidebar -->
+    <div class="d-flex">
+        <div id="sidebar-container" style="width: 260px; flex-shrink: 0;">
+            {% include 'admin/includes/sidebar.html' %}
+        </div>
+        <main class="flex-grow-1 overflow-auto vh-100 p-4">
+        
+        <!-- Topbar -->
+        {% if messages %}
+        <div class="mb-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible bg-white shadow-sm border-0 border-start border-4 border-{{ message.tags }} rounded-3 fade show" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill text-success{% elif message.tags == 'error' %}bi-x-circle-fill text-danger{% else %}bi-info-circle-fill text-primary{% endif %} fs-4 me-3"></i>
+                        <div>{{ message }}</div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="topbar">
+            <div>
+                <h3 class="m-0 fw-bold text-dark">Registration Approvals</h3>
+                <p class="text-muted m-0 small">Manage new partner requests and onboardings</p>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <p>Pending Approvals</p>
+                        <h3 class="text-dark">{{ stats.pending|default:"0" }}</h3>
+                    </div>
+                    <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <p>Approved Today</p>
+                        <h3 class="text-success">{{ stats.approved|default:"0" }}</h3>
+                    </div>
+                    <div class="stat-icon bg-success bg-opacity-10 text-success">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <p>Rejected</p>
+                        <h3 class="text-danger">{{ stats.rejected|default:"0" }}</h3>
+                    </div>
+                    <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approvals Table -->
+        <div class="table-card">
+            <div class="table-header">
+                <h5 class="fw-bold m-0 fs-5">Pending Requests</h5>
+                <div class="search-box">
+                    <i class="bi bi-search me-2"></i>
+                    <input type="text" placeholder="Search businesses, emails...">
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle border-top">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Req ID</th>
+                            <th>Business Profile</th>
+                            <th>Category</th>
+                            <th>Contact Info</th>
+                            <th>Date Applied</th>
+                            <th>Status</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for req in registrations %}
+                        <tr>
+                            <td class="ps-3 fw-medium text-muted">#{{ req.request_id }}</td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar-circle bg-success bg-opacity-10 text-success me-3">{{ req.business_name|make_list|first|upper }}</div>
+                                    <div>
+                                        <div class="fw-bold text-dark">{{ req.business_name }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge-category badge-custom">
+                                    {% if req.category == 'station' %}<i class="bi bi-ev-station-fill"></i> Station
+                                    {% elif req.category == 'showroom' %}<i class="bi bi-shop"></i> Showroom
+                                    {% else %}<i class="bi bi-tools"></i> Service{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="fw-medium text-dark small">{{ req.email }}</div>
+                                <div class="small text-muted">{{ req.phone_number }}</div>
+                            </td>
+                            <td>
+                                <div class="fw-medium">{{ req.created_at|date:"M d, Y" }}</div>
+                                <div class="small text-muted">{{ req.created_at|time:"h:i A" }}</div>
+                            </td>
+                            <td>
+                                <span class="status-badge status-pending">
+                                    <span class="status-dot"></span> Pending Review
+                                </span>
+                            </td>
+                            <td class="text-center">
+                                <div class="action-group">
+                                    <button class="btn-icon-custom view"
+                                        onclick="openViewModal('{{ req.request_id }}','{{ req.business_name|escapejs }}','{{ req.category }}','{{ req.email }}','{{ req.phone_number }}','{{ req.gst_number|default:"—" }}','{% if req.document_url %}{{ req.document_url.url }}{% endif %}')" title="View Details">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn-icon-custom approve" onclick="openApproveModal('{{ req.request_id }}')" title="Approve">
+                                        <i class="bi bi-check2"></i>
+                                    </button>
+                                    <button class="btn-icon-custom reject" onclick="openRejectModal('{{ req.request_id }}')" title="Reject">
+                                        <i class="bi bi-x-lg" style="font-size: 0.85rem;"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">No pending registrations found.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+            </main>
+    </div>
+
+    <!-- Action Forms -->
+    <form id="actionForm" method="POST" style="display:none;">
+        {% csrf_token %}
+        <input type="hidden" name="rejection_reason" id="hiddenRejectionReason">
+    </form>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Enhanced View Details Modal -->
+    <div class="modal fade" id="viewDetailsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header align-items-center">
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center m-0">
+                        <span class="avatar-circle bg-success bg-opacity-10 text-success me-3 shadow-sm" id="viewModalAvatar" style="width: 45px; height: 45px; font-size: 1.2rem;">?</span>
+                        Business Request Details
+                        <span class="badge bg-light text-muted border ms-3 fs-6 px-3 py-2 rounded-pill shadow-sm" id="viewReqIdBadge">#—</span>
+                    </h5>
+                    <button type="button" class="btn-close shadow-none bg-light rounded-circle p-2" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 bg-light bg-opacity-50">
+                    <div class="row g-4">
+                        <!-- Left Col: Details -->
+                        <div class="col-lg-6">
+                            <div class="info-block">
+                                <h6 class="fw-bold text-success mb-4 text-uppercase d-flex align-items-center pb-3 border-bottom" style="letter-spacing: 1px; font-size: 0.85rem;">
+                                    <i class="bi bi-info-circle-fill me-2 fs-5"></i> General Information
+                                </h6>
+                                <div class="detail-row">
+                                    <div class="detail-label">Business Name</div>
+                                    <div class="detail-value text-dark fs-6" id="viewBusinessName">—</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Category</div>
+                                    <div class="detail-value" id="viewCategory">—</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Email Address</div>
+                                    <div class="detail-value" id="viewEmail">—</div>
+                                </div>
+                                <div class="detail-row border-0">
+                                    <div class="detail-label">Phone Number</div>
+                                    <div class="detail-value" id="viewPhone">—</div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Right Col: Docs -->
+                        <div class="col-lg-6">
+                            <div class="info-block">
+                                <h6 class="fw-bold text-success mb-4 text-uppercase d-flex align-items-center pb-3 border-bottom" style="letter-spacing: 1px; font-size: 0.85rem;">
+                                    <i class="bi bi-shield-check me-2 fs-5"></i> Verification & Legal
+                                </h6>
+                                <div class="detail-row">
+                                    <div class="detail-label">GST Number</div>
+                                    <div class="detail-value" id="viewGst">—</div>
+                                </div>
+                                <div class="detail-row border-0">
+                                    <div class="detail-label">Document Status</div>
+                                    <div class="detail-value" id="viewDocStatus">—</div>
+                                </div>
+                                <div class="doc-preview shadow-sm" id="viewDocPreview">
+                                    <div class="mb-3">
+                                        <i class="bi bi-file-earmark-pdf-fill text-danger" style="font-size: 3.5rem; filter: drop-shadow(0 4px 6px rgba(220,38,38,0.2));"></i>
+                                    </div>
+                                    <div class="fw-bold text-dark fs-6" id="viewDocName">—</div>
+                                    <div class="small text-muted mb-4 mt-1">Uploaded Document</div>
+                                    <a id="viewDocLink" href="#" target="_blank" class="btn btn-outline-primary btn-modal w-100 fw-bold border-2">
+                                        <i class="bi bi-cloud-arrow-down-fill me-2"></i> Download to Verify
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-between">
+                    <button type="button" class="btn btn-light btn-modal border text-muted fw-bold" data-bs-dismiss="modal">Close Window</button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-danger btn-modal shadow-sm" onclick="triggerRejectFromView()"><i class="bi bi-x-circle me-1"></i> Reject Request</button>
+                        <button type="button" class="btn btn-success btn-modal px-4 shadow-sm" onclick="triggerApproveFromView()"><i class="bi bi-check2-circle me-1"></i> Approve Account</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animated Approve Confirmation Modal -->
+    <div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-body text-center p-5">
+                    <div class="icon-circle-lg bg-success bg-opacity-10 text-success animate-success mx-auto">
+                        <i class="bi bi-check-lg fw-bold"></i>
+                    </div>
+                    <h4 class="fw-bold text-dark mb-2">Approve Request?</h4>
+                    <p class="text-muted small mb-4">You are about to approve <span id="approveReqId" class="fw-bold text-dark"></span> and grant system access.</p>
+                    
+                    <div class="d-flex flex-column gap-2">
+                        <button type="button" class="btn btn-success btn-modal w-100 shadow-sm" onclick="confirmApproval()">Yes, Approve Account</button>
+                        <button type="button" class="btn btn-light btn-modal w-100 text-muted fw-bold border" data-bs-dismiss="modal">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Animated Reject Confirmation Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-body p-5">
+                    <div class="text-center mb-4">
+                        <div class="icon-circle-lg bg-danger bg-opacity-10 text-danger animate-danger mx-auto">
+                            <i class="bi bi-x-lg fw-bold"></i>
+                        </div>
+                        <h4 class="fw-bold text-dark mb-2">Reject Request?</h4>
+                        <p class="text-muted small">Are you sure you want to reject <span id="rejectReqId" class="fw-bold text-dark"></span>? This action will notify the user.</p>
+                    </div>
+                    
+                    <div class="mb-4 text-start">
+                        <label class="form-label small fw-bold text-dark" for="rejectionReasonInput">Reason for Rejection (Optional)</label>
+                        <textarea id="rejectionReasonInput" class="form-control bg-light border-light-subtle rounded-3" rows="3" placeholder="e.g. Invalid document uploaded, missing GST details..."></textarea>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button type="button" class="btn btn-light btn-modal text-muted fw-bold border" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-danger btn-modal px-4 shadow-sm" onclick="confirmRejection()">Yes, Reject Request</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Success Feedback Modal (Flashes briefly after action) -->
+    <div class="modal fade" id="successFeedbackModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-body text-center p-4 py-5">
+                    <i id="feedbackIcon" class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                    <h5 class="fw-bold text-dark mt-3 mb-1" id="feedbackTitle">Success!</h5>
+                    <p class="text-muted small m-0" id="feedbackMessage">Action completed successfully.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Modal Instances Initialization
+        let viewDetailsModal, approveModal, rejectModal, successFeedbackModal;
+        let currentActiveReqId = '';
+
+        // Category display helpers
+        const CATEGORY_LABELS = {
+            'station':  '<span class="badge-category badge-custom shadow-sm"><i class="bi bi-ev-station-fill"></i> Charging Station</span>',
+            'showroom': '<span class="badge-category badge-custom shadow-sm"><i class="bi bi-shop"></i> EV Showroom</span>',
+            'service':  '<span class="badge-category badge-custom shadow-sm"><i class="bi bi-tools"></i> Service Center</span>',
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            viewDetailsModal  = new bootstrap.Modal(document.getElementById('viewDetailsModal'));
+            approveModal      = new bootstrap.Modal(document.getElementById('approveModal'));
+            rejectModal       = new bootstrap.Modal(document.getElementById('rejectModal'));
+            successFeedbackModal = new bootstrap.Modal(document.getElementById('successFeedbackModal'));
+        });
+
+        // --- View Details Logic ---
+        function openViewModal(id, businessName, category, email, phone, gst, docUrl) {
+            currentActiveReqId = id;
+
+            // Header
+            document.getElementById('viewReqIdBadge').innerText = '#' + id;
+            document.getElementById('viewModalAvatar').innerText = businessName ? businessName.charAt(0).toUpperCase() : '?';
+
+            // General info fields
+            document.getElementById('viewBusinessName').innerText = businessName || '—';
+            document.getElementById('viewCategory').innerHTML = CATEGORY_LABELS[category] || category || '—';
+            document.getElementById('viewEmail').innerHTML = email
+                ? '<a href="mailto:' + email + '" class="text-decoration-none fw-bold">' + email + '</a>'
+                : '—';
+            document.getElementById('viewPhone').innerText = phone || '—';
+
+            // GST
+            if (gst && gst !== '—') {
+                document.getElementById('viewGst').innerHTML =
+                    '<span class="font-monospace bg-light px-3 py-1 rounded-pill border text-primary fw-bold d-inline-block">' + gst + '</span>';
+            } else {
+                document.getElementById('viewGst').innerHTML = '<span class="text-muted fst-italic">Not provided</span>';
+            }
+
+            // Document
+            if (docUrl && docUrl !== '') {
+                document.getElementById('viewDocStatus').innerHTML =
+                    '<i class="bi bi-check-circle-fill me-1 text-success"></i><span class="text-success">Successfully Uploaded</span>';
+                const fileName = docUrl.split('/').pop() || 'Business Document';
+                document.getElementById('viewDocName').innerText = fileName;
+                document.getElementById('viewDocLink').href = docUrl;
+                document.getElementById('viewDocPreview').style.display = '';
+            } else {
+                document.getElementById('viewDocStatus').innerHTML =
+                    '<i class="bi bi-x-circle-fill me-1 text-danger"></i><span class="text-danger">No Document Uploaded</span>';
+                document.getElementById('viewDocPreview').style.display = 'none';
+            }
+
+            viewDetailsModal.show();
+        }
+
+        function triggerApproveFromView() {
+            viewDetailsModal.hide();
+            setTimeout(() => { openApproveModal(currentActiveReqId); }, 300);
+        }
+
+        function triggerRejectFromView() {
+            viewDetailsModal.hide();
+            setTimeout(() => { openRejectModal(currentActiveReqId); }, 300);
+        }
+
+        // --- Approve Logic ---
+        function openApproveModal(id) {
+            currentActiveReqId = id;
+            document.getElementById('approveReqId').innerText = '#' + id;
+            approveModal.show();
+        }
+
+        function getUrl(action, id) {
+            // Build /approvals/<id>/approve/ or /approvals/<id>/reject/
+            return "{% url 'admin_approvals' %}".replace(/\/$/, '') + '/' + id + '/' + action + '/';
+        }
+
+        function confirmApproval() {
+            let form = document.getElementById('actionForm');
+            form.action = getUrl('approve', currentActiveReqId);
+            form.submit();
+        }
+
+        // --- Reject Logic ---
+        function openRejectModal(id) {
+            currentActiveReqId = id;
+            document.getElementById('rejectReqId').innerText = '#' + id;
+            // Clear previous reason
+            const ta = document.getElementById('rejectionReasonInput');
+            if (ta) ta.value = '';
+            rejectModal.show();
+        }
+
+        function confirmRejection() {
+            let form = document.getElementById('actionForm');
+            form.action = getUrl('reject', currentActiveReqId);
+            const reasonInput = document.getElementById('rejectionReasonInput');
+            document.getElementById('hiddenRejectionReason').value = reasonInput ? reasonInput.value : '';
+            form.submit();
+        }
+
+        // --- Feedback Animation ---
+        function showFeedback(title, message, type) {
+            const icon = document.getElementById('feedbackIcon');
+            icon.className = type === 'success'
+                ? 'bi bi-check-circle-fill text-success'
+                : 'bi bi-x-circle-fill text-danger';
+            document.getElementById('feedbackTitle').innerText = title;
+            document.getElementById('feedbackMessage').innerText = message;
+            successFeedbackModal.show();
+            setTimeout(() => { successFeedbackModal.hide(); }, 2500);
+        }
+    </script>
+    <script>
+        if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+    </script>
+</body>
+</html>

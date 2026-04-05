@@ -18,11 +18,39 @@ class CSDashboardView(AdminRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['active_page'] = 'dashboard'
-        context['total_stations'] = Station.objects.count()
-        context['total_charger_types'] = ChargerType.objects.count()
-        Booking.sync_statuses()
-        context['total_amenities'] = Amenity.objects.filter(category='station').count()
-        context['total_bookings'] = Booking.objects.filter(status__in=['confirmed', 'completed']).count()
+        
+        # Filter statistics by user if not admin
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            user_stations = Station.objects.filter(created_by=self.request.user)
+            context['total_stations'] = user_stations.count()
+            
+            # Get charger types used in user's stations
+            user_charger_types = ChargerType.objects.filter(
+                station_links__station__in=user_stations
+            ).distinct()
+            context['total_charger_types'] = user_charger_types.count()
+            
+            # Get amenities used in user's stations
+            user_amenities = Amenity.objects.filter(
+                stationamenity__station__in=user_stations,
+                category='station'
+            ).distinct()
+            context['total_amenities'] = user_amenities.count()
+            
+            # Get bookings for user's stations
+            Booking.sync_statuses()
+            context['total_bookings'] = Booking.objects.filter(
+                station__in=user_stations,
+                status__in=['confirmed', 'completed']
+            ).count()
+        else:
+            # Admin sees all data
+            context['total_stations'] = Station.objects.count()
+            context['total_charger_types'] = ChargerType.objects.count()
+            Booking.sync_statuses()
+            context['total_amenities'] = Amenity.objects.filter(category='station').count()
+            context['total_bookings'] = Booking.objects.filter(status__in=['confirmed', 'completed']).count()
+        
         return context
 
 # --- Stations ---
@@ -32,7 +60,11 @@ class CSStationListView(AdminRequiredMixin, ListView):
     context_object_name = 'stations'
 
     def get_queryset(self):
-        return Station.objects.select_related('address').prefetch_related('station_chargers').order_by('-created_at')
+        queryset = Station.objects.select_related('address', 'created_by').prefetch_related('station_chargers').order_by('-created_at')
+        # Filter by user if not admin
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            queryset = queryset.filter(created_by=self.request.user)
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -67,7 +99,8 @@ class CSStationCreateView(AdminRequiredMixin, TemplateView):
                     operator_name=request.POST.get('operator_name'),
                     status=request.POST.get('status', 'active').lower(),
                     opening_hours=request.POST.get('opening_hours'),
-                    address=address
+                    address=address,
+                    created_by=request.user
                 )
 
                 amenity_ids = request.POST.getlist('amenities')
@@ -165,6 +198,11 @@ class CSStationUpdateView(AdminRequiredMixin, TemplateView):
 
 class CSStationDeleteView(AdminRequiredMixin, View):
     def post(self, request, pk):
+        # Check if user has permission to delete this station
+        if not request.user.is_staff and request.user.role != 'admin':
+            station = Station.objects.filter(station_id=pk, created_by=request.user).first()
+            if not station:
+                return redirect('admin-cs-stations')  # Or show error
         Station.objects.filter(station_id=pk).delete()
         return redirect('admin-cs-stations')
 
@@ -176,7 +214,12 @@ class CSChargerTypeListView(AdminRequiredMixin, ListView):
     context_object_name = 'charger_types'
     
     def get_queryset(self):
-        return ChargerType.objects.all().order_by('name')
+        queryset = ChargerType.objects.all().order_by('name')
+        # Filter by user if not admin - only show charger types used in user's stations
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            user_stations = Station.objects.filter(created_by=self.request.user)
+            queryset = queryset.filter(station_links__station__in=user_stations).distinct()
+        return queryset
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -228,7 +271,12 @@ class CSAmenityListView(AdminRequiredMixin, ListView):
     context_object_name = 'amenities'
     
     def get_queryset(self):
-        return Amenity.objects.filter(category='station').order_by('name')
+        queryset = Amenity.objects.filter(category='station').order_by('name')
+        # Filter by user if not admin - only show amenities used in user's stations
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            user_stations = Station.objects.filter(created_by=self.request.user)
+            queryset = queryset.filter(stationamenity__station__in=user_stations).distinct()
+        return queryset
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -277,7 +325,13 @@ class CSBookingListView(AdminRequiredMixin, ListView):
     
     def get_queryset(self):
         Booking.sync_statuses()
-        return Booking.objects.select_related('user', 'station', 'station_charger__charger_type').order_by('-created_at')
+        queryset = Booking.objects.select_related('user', 'station', 'station_charger__charger_type').order_by('-created_at')
+        # Filter by user if not admin
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            # Station users can only see bookings for their stations
+            user_stations = Station.objects.filter(created_by=self.request.user)
+            queryset = queryset.filter(station__in=user_stations)
+        return queryset
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

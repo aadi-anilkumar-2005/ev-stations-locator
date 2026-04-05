@@ -1,12 +1,20 @@
-
+from django.views import View
 from django.views.generic import TemplateView, FormView, RedirectView, DetailView, UpdateView, DeleteView, ListView, CreateView
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth import get_user_model
+from django.contrib import messages
 from django.urls import reverse_lazy
 from django.shortcuts import redirect, render, get_object_or_404
 from django.db import transaction
 from django.core.paginator import Paginator
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 from stations.models import Station, Address, Amenity, StationAmenity, ChargerType, StationCharger, Showroom
+from users.models import PartnerRegistration, UserProfile
+import json
 
 class AdminRequiredMixin(UserPassesTestMixin):
 
@@ -188,6 +196,11 @@ class AdminUsersView(AdminRequiredMixin, ListView):
             queryset = queryset.filter(is_active=True)
         elif (status_filter == 'inactive'):
             queryset = queryset.filter(is_active=False)
+            
+        role_filter = self.request.GET.get('role', 'all')
+        if role_filter != 'all':
+            queryset = queryset.filter(role=role_filter)
+            
         return queryset
 
     def get_context_data(self, **kwargs):
@@ -198,6 +211,10 @@ class AdminUsersView(AdminRequiredMixin, ListView):
         active_users = User.objects.filter(is_active=True).count()
         inactive_users = (total_users - active_users)
         context['stats'] = {'total': total_users, 'active': active_users, 'inactive': inactive_users, 'new_this_month': User.objects.filter(date_joined__month=7).count()}
+        
+        context['current_search'] = self.request.GET.get('search', '')
+        context['current_status'] = self.request.GET.get('status', 'all')
+        context['current_role'] = self.request.GET.get('role', 'all')
         return context
 
 class AdminAddUserView(AdminRequiredMixin, CreateView):
@@ -205,7 +222,7 @@ class AdminAddUserView(AdminRequiredMixin, CreateView):
     User = get_user_model()
     model = User
     template_name = 'admin/users/add-user.html'
-    fields = ['full_name', 'email', 'is_active', 'is_staff']
+    fields = ['full_name', 'email']
     success_url = reverse_lazy('admin-users')
 
     def get_context_data(self, **kwargs):
@@ -219,6 +236,11 @@ class AdminAddUserView(AdminRequiredMixin, CreateView):
             import uuid
             base_username = user.email.split('@')[0]
             user.username = f'{base_username}_{uuid.uuid4().hex[:8]}'
+            
+        user.is_staff = True
+        user.role = 'admin'
+        user.is_active = True
+        
         password = self.request.POST.get('password')
         if password:
             user.set_password(password)
@@ -231,32 +253,15 @@ class AdminAddUserView(AdminRequiredMixin, CreateView):
             UserProfile.objects.update_or_create(user=user, defaults={'phone_number': phone_number})
         return redirect(self.success_url)
 
-class AdminEditUserView(AdminRequiredMixin, UpdateView):
-    from django.contrib.auth import get_user_model
-    User = get_user_model()
-    model = User
-    template_name = 'admin/users/add-user.html'
-    fields = ['full_name', 'email', 'is_active', 'is_staff']
-    success_url = reverse_lazy('admin-users')
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['is_edit'] = True
-        user = self.get_object()
-        if hasattr(user, 'profile'):
-            context['phone_number'] = user.profile.phone_number
-        return context
-
-    def form_valid(self, form):
-        user = form.save(commit=False)
-        password = self.request.POST.get('password')
-        if password:
-            user.set_password(password)
+class AdminToggleUserStatusView(AdminRequiredMixin, View):
+    def post(self, request, pk, *args, **kwargs):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        user = get_object_or_404(User, pk=pk)
+        user.is_active = not user.is_active
         user.save()
-        phone_number = self.request.POST.get('phone_number')
-        from users.models import UserProfile
-        UserProfile.objects.update_or_create(user=user, defaults={'phone_number': phone_number})
-        return redirect(self.success_url)
+        messages.success(request, f"User {user.username} status changed to {'Active' if user.is_active else 'Inactive'}.")
+        return redirect('admin-users')
 
 class AdminDeleteUserView(AdminRequiredMixin, DeleteView):
     from django.contrib.auth import get_user_model
@@ -319,3 +324,115 @@ class AdminSettingsView(AdminRequiredMixin, TemplateView):
         except Exception as e:
             messages.error(request, f'An error occurred: {str(e)}')
         return redirect('admin-settings')
+
+class PartnerRegistrationCreateView(View):
+    def get(self, request):
+        return render(request, 'admin/auth/register.html')
+
+    def post(self, request):
+        business_name = request.POST.get('business_name')
+        category = request.POST.get('category')
+        email = request.POST.get('email')
+        phone_number = request.POST.get('phone_number')
+        password = request.POST.get('password')
+        gst_number = request.POST.get('gst_number')
+        document = request.FILES.get('document')
+
+        # Basic Check
+        if not all([business_name, category, email, phone_number, password, document]):
+            messages.error(request, "Please fill in all required fields.")
+            return redirect('partner_register')
+
+        # Hash the password
+        # Do not use set_password since this is not a User model yet, store it safely
+        hashed_password = make_password(password)
+
+        PartnerRegistration.objects.create(
+            business_name=business_name,
+            category=category,
+            email=email,
+            phone_number=phone_number,
+            password_hash=hashed_password,
+            gst_number=gst_number,
+            document_url=document,
+        )
+        
+        messages.success(request, "Registration Submitted!")
+        return redirect('partner_register')
+
+class AdminRegistrationApprovalListView(View):
+    def get(self, request):
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return redirect('admin-login')
+        
+        pending_registrations = PartnerRegistration.objects.filter(status='pending')
+        # We can also load approved and rejected if needed for stats
+        stats = {
+            'pending': pending_registrations.count(),
+            'approved': PartnerRegistration.objects.filter(status='approved').count(),
+            'rejected': PartnerRegistration.objects.filter(status='rejected').count(),
+        }
+
+        context = {
+            'registrations': pending_registrations,
+            'stats': stats
+        }
+        return render(request, 'admin/registration_approve.html', context)
+
+
+class PartnerRegistrationApproveView(View):
+    def post(self, request, pk):
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return Response({"error": "Unauthorized"}, status=403)
+            
+        registration = get_object_or_404(PartnerRegistration, request_id=pk)
+        
+        if registration.status != 'pending':
+            messages.error(request, "Registration is not in pending status.")
+            return redirect('admin_approvals')
+            
+        # Create user
+        User = get_user_model()
+        if User.objects.filter(email=registration.email).exists():
+            messages.error(request, "A user with this email already exists.")
+            return redirect('admin_approvals')
+            
+        user = User.objects.create(
+            username=registration.email,
+            email=registration.email,
+            full_name=registration.business_name,
+            role=registration.category,  # category matches 'station', 'showroom', 'service' exactly
+        )
+        # Assign the pre-hashed password directly (no double-hashing)
+        user.password = registration.password_hash
+        user.save()
+
+        # Update Registration status
+        registration.status = 'approved'
+        registration.action_by_admin = request.user
+        registration.save()
+        
+        messages.success(request, f"Registration {registration.request_id} has been approved.")
+        return redirect('admin_approvals')
+
+
+class PartnerRegistrationRejectView(View):
+    def post(self, request, pk):
+        if not request.user.is_authenticated or request.user.role != 'admin':
+            return Response({"error": "Unauthorized"}, status=403)
+            
+        registration = get_object_or_404(PartnerRegistration, request_id=pk)
+        
+        if registration.status != 'pending':
+            messages.error(request, "Registration is not in pending status.")
+            return redirect('admin_approvals')
+            
+        rejection_reason = request.POST.get('rejection_reason', '')
+        
+        registration.status = 'rejected'
+        registration.rejection_reason = rejection_reason
+        registration.action_by_admin = request.user
+        registration.save()
+        
+        messages.success(request, f"Registration {registration.request_id} has been rejected.")
+        return redirect('admin_approvals')

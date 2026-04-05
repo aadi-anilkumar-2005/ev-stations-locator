@@ -74,6 +74,15 @@ class Station(models.Model):
 
     # Location data - Normalized
     address = models.ForeignKey(Address, on_delete=models.PROTECT, related_name='stations', null=True)
+    
+    # User who created this station
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_stations'
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -157,6 +166,15 @@ class Showroom(models.Model):
     # Location Data - Normalized
     address = models.ForeignKey(Address, on_delete=models.PROTECT, related_name='showrooms', null=True)
     
+    # User who created this showroom
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_showrooms'
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -203,6 +221,15 @@ class ServiceCenter(models.Model):
     
     # Location Data - Normalized
     address = models.ForeignKey(Address, on_delete=models.PROTECT, related_name='service_centers', null=True)
+    
+    # User who created this service center
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_service_centers'
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
 

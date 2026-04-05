@@ -21,9 +21,30 @@ class ShowroomDashboardView(ShowroomRoleRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['active_page'] = 'dashboard'
-        context['total_showrooms'] = Showroom.objects.count()
-        context['total_brands'] = Brand.objects.count()
-        context['total_amenities'] = Amenity.objects.filter(category='showroom').count()
+        
+        # Filter statistics by user if not admin
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            user_showrooms = Showroom.objects.filter(created_by=self.request.user)
+            context['total_showrooms'] = user_showrooms.count()
+            
+            # Get brands used in user's showrooms
+            user_brands = Brand.objects.filter(
+                showrooms__in=user_showrooms
+            ).distinct()
+            context['total_brands'] = user_brands.count()
+            
+            # Get amenities used in user's showrooms
+            user_amenities = Amenity.objects.filter(
+                showroomamenity__showroom__in=user_showrooms,
+                category='showroom'
+            ).distinct()
+            context['total_amenities'] = user_amenities.count()
+        else:
+            # Admin sees all data
+            context['total_showrooms'] = Showroom.objects.count()
+            context['total_brands'] = Brand.objects.count()
+            context['total_amenities'] = Amenity.objects.filter(category='showroom').count()
+        
         return context
 
 
@@ -35,7 +56,11 @@ class ShowroomListView(ShowroomRoleRequiredMixin, ListView):
     context_object_name = 'showrooms'
 
     def get_queryset(self):
-        return Showroom.objects.select_related('brand', 'address').order_by('-created_at')
+        queryset = Showroom.objects.select_related('brand', 'address', 'created_by').order_by('-created_at')
+        # Filter by user if not admin
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            queryset = queryset.filter(created_by=self.request.user)
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -78,6 +103,7 @@ class ShowroomCreateView(ShowroomRoleRequiredMixin, TemplateView):
                     email=request.POST.get('email'),
                     website=request.POST.get('website'),
                     address=address,
+                    created_by=request.user
                 )
                 for am_id in request.POST.getlist('amenities'):
                     try:
@@ -98,7 +124,11 @@ class ShowroomUpdateView(ShowroomRoleRequiredMixin, TemplateView):
     template_name = 'showroom/showroom_form_page.html'
 
     def get_showroom(self):
-        return Showroom.objects.select_related('brand', 'address').get(showroom_id=self.kwargs['pk'])
+        queryset = Showroom.objects.select_related('brand', 'address', 'created_by')
+        # Filter by user if not admin
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            queryset = queryset.filter(created_by=self.request.user)
+        return queryset.get(showroom_id=self.kwargs['pk'])
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -154,6 +184,11 @@ class ShowroomUpdateView(ShowroomRoleRequiredMixin, TemplateView):
 
 class ShowroomDeleteView(ShowroomRoleRequiredMixin, View):
     def post(self, request, pk):
+        # Check if user has permission to delete this showroom
+        if not request.user.is_staff and request.user.role != 'admin':
+            showroom = Showroom.objects.filter(showroom_id=pk, created_by=request.user).first()
+            if not showroom:
+                return redirect('admin-showroom-list')  # Or show error
         Showroom.objects.filter(showroom_id=pk).delete()
         return redirect('admin-showroom-list')
 
@@ -166,7 +201,12 @@ class BrandListView(ShowroomRoleRequiredMixin, ListView):
     context_object_name = 'brands'
 
     def get_queryset(self):
-        return Brand.objects.all().order_by('name')
+        queryset = Brand.objects.all().order_by('name')
+        # Filter by user if not admin - only show brands used in user's showrooms
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            user_showrooms = Showroom.objects.filter(created_by=self.request.user)
+            queryset = queryset.filter(showrooms__in=user_showrooms).distinct()
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -232,7 +272,12 @@ class ShowroomAmenityListView(ShowroomRoleRequiredMixin, ListView):
     context_object_name = 'amenities'
 
     def get_queryset(self):
-        return Amenity.objects.filter(category='showroom').order_by('name')
+        queryset = Amenity.objects.filter(category='showroom').order_by('name')
+        # Filter by user if not admin - only show amenities used in user's showrooms
+        if not self.request.user.is_staff and self.request.user.role != 'admin':
+            user_showrooms = Showroom.objects.filter(created_by=self.request.user)
+            queryset = queryset.filter(showroomamenity__showroom__in=user_showrooms).distinct()
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
