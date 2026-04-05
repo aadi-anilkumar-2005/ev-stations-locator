@@ -293,4 +293,87 @@ export const api = {
 
     if (!response.ok) throw new Error("Failed to remove favorite");
   },
+
+  // --- BOOKINGS ---
+
+  /**
+   * Fetch booked slots for a station charger on a specific date.
+   * Sends auth token if present so the backend can return user_active_booking.
+   * @param stationId  - Station primary key
+   * @param date       - ISO date string "YYYY-MM-DD"
+   * @param chargerType - "level2" | "dcfast"
+   */
+  getBookingAvailability: async (
+    stationId: number,
+    date: string,
+    chargerId: number
+  ) => {
+    // Include auth headers so backend can return user_active_booking
+    const headers = await getHeaders();
+    const response = await fetch(
+      `${API_BASE_URL}/bookings/availability/${stationId}/?date=${date}&charger_id=${chargerId}`,
+      { headers }
+    );
+    if (!response.ok) return null;
+    return response.json() as Promise<{
+      booked_slots: number[];
+      charger_rate: string;
+      charger_name: string;
+      station_charger_id: number | null;
+      user_active_booking: {
+        id: number;
+        charger_name: string;
+        booking_date: string;
+        start_time: string;
+        end_time: string;
+        total_price: string;
+      } | null;
+    }>;
+  },
+
+  /**
+   * Create a confirmed booking. Requires authentication.
+   */
+  createBooking: async (payload: {
+    station_charger: number;
+    booking_date: string;
+    start_time: string;
+    end_time: string;
+    duration_hours: number;
+    total_price: string;
+  }) => {
+    const headers = await getHeaders();
+    const response = await fetch(`${API_BASE_URL}/bookings/create/`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.detail || JSON.stringify(data));
+    return data;
+  },
+
+  /**
+   * Fetch all bookings for the authenticated user.
+   */
+  getMyBookings: async () => {
+    const headers = await getHeaders();
+    const response = await fetch(`${API_BASE_URL}/bookings/my/`, { headers });
+    if (!response.ok) return [];
+    return response.json();
+  },
+
+  /**
+   * Soft-cancel a booking by ID.
+   */
+  cancelBooking: async (bookingId: number) => {
+    const headers = await getHeaders();
+    const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/cancel/`, {
+      method: "POST",
+      headers,
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || "Failed to cancel booking");
+    return data;
+  },
 };

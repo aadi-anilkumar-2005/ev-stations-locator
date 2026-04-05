@@ -1,8 +1,8 @@
 from rest_framework import serializers
 from .models import (
-    Favorite, ChargerType, Amenity, StationAmenity, 
+    Favorite, ChargerType, Amenity, StationAmenity,
     Station, StationCharger, Brand, Showroom, ShowroomAmenity,
-    ServiceCenter, ServiceAmenity, Address
+    ServiceCenter, ServiceAmenity, Address, Booking
 )
 
 class AddressSerializer(serializers.ModelSerializer):
@@ -135,3 +135,89 @@ class MapServiceCenterSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceCenter
         fields = ['id', 'service_id', 'name', 'latitude', 'longitude', 'status', 'place_type', 'type']
+
+
+# ── Booking Serializers ────────────────────────────────────────────────────────
+
+class BookingSerializer(serializers.ModelSerializer):
+    """Read serializer — includes nested station / charger summary."""
+    station_name = serializers.CharField(source='station_charger.station.name', read_only=True)
+    station_id = serializers.IntegerField(source='station.station_id', read_only=True)
+    charger_name = serializers.CharField(source='station_charger.charger_type.name', read_only=True)
+    connector_type = serializers.CharField(source='station_charger.charger_type.connector_type', read_only=True)
+
+    class Meta:
+        model = Booking
+        fields = [
+            'id', 'station_id', 'station_name', 'station_charger',
+            'charger_name', 'connector_type',
+            'booking_date', 'start_time', 'end_time',
+            'duration_hours', 'total_price', 'status', 'created_at',
+        ]
+        read_only_fields = ['id', 'created_at', 'status']
+
+
+class BookingCreateSerializer(serializers.ModelSerializer):
+    """Write serializer — validates and creates a booking."""
+
+    class Meta:
+        model = Booking
+        fields = [
+            'station_charger', 'booking_date',
+            'start_time', 'end_time',
+            'duration_hours', 'total_price',
+        ]
+
+    def validate(self, data):
+        sc = data.get('station_charger')
+        date = data.get('booking_date')
+        start = data.get('start_time')
+        end = data.get('end_time')
+        user = self.context['request'].user
+
+        if start and end and start >= end:
+            raise serializers.ValidationError("End time must be after start time.")
+
+        if sc and date and start and end:
+            # ── Check slot overlap ───────────────────────────────────────────
+            conflicts = Booking.objects.filter(
+                station_charger=sc,
+                booking_date=date,
+                status='confirmed',
+                start_time__lt=end,
+                end_time__gt=start,
+            )
+            if conflicts.exists():
+                raise serializers.ValidationError(
+                    "This time slot is already booked for this charger."
+                )
+
+        # ── One active booking per user per station ───────────────────────────
+        if sc:
+            station = sc.station
+            existing = Booking.objects.filter(
+                user=user,
+                station=station,
+                status='confirmed',
+            )
+            if existing.exists():
+                raise serializers.ValidationError(
+                    "You already have an active booking at this station. "
+                    "Cancel it first before making a new one."
+                )
+        return data
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        sc = validated_data['station_charger']
+        validated_data['user'] = user
+        validated_data['station'] = sc.station   # populate direct FK
+        validated_data['status'] = 'confirmed'
+        return super().create(validated_data)
+
+
+class AvailabilitySlotSerializer(serializers.Serializer):
+    """Used to return booked start hours for a charger on a given date."""
+    booked_slots = serializers.ListField(child=serializers.FloatField())
+    charger_rate = serializers.DecimalField(max_digits=10, decimal_places=2)
+    charger_name = serializers.CharField()

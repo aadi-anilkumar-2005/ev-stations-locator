@@ -236,3 +236,148 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"{self.user} -> {self.station or self.showroom or self.service_center}"
+
+
+# ── Booking ────────────────────────────────────────────────────────────────────
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import timezone
+
+class Booking(models.Model):
+    STATUS_CHOICES = [
+        ('confirmed', 'Confirmed'),
+        ('cancelled', 'Cancelled'),
+        ('completed', 'Completed'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='bookings'
+    )
+
+    # Direct FK to Station — makes it easy to query "all bookings for station X"
+    station = models.ForeignKey(
+        'Station',
+        on_delete=models.CASCADE,
+        related_name='bookings',
+        null=True,
+        blank=True,
+        help_text="The charging station this booking belongs to"
+    )
+
+    # FK to the specific charger type at that station
+    station_charger = models.ForeignKey(
+        'StationCharger',
+        on_delete=models.CASCADE,
+        related_name='bookings'
+    )
+
+    booking_date = models.DateField()
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+
+    duration_hours = models.DecimalField(
+        max_digits=4,
+        decimal_places=2,
+        help_text="Duration in hours"
+    )
+
+    total_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Total cost in INR"
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='confirmed'
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'ev_bookings'
+        ordering = ['-booking_date', '-start_time']
+        indexes = [
+            models.Index(fields=['booking_date']),
+            models.Index(fields=['station_charger']),
+            models.Index(fields=['station']),
+            models.Index(fields=['user', 'status']),
+        ]
+
+    @classmethod
+    def sync_statuses(cls):
+        """
+        Marks confirmed bookings as 'completed' if their end_time has passed.
+        """
+        now = timezone.localtime() if timezone.is_aware(timezone.now()) else timezone.now()
+        current_date = now.date()
+        current_time = now.time()
+
+        # Update past dates
+        cls.objects.filter(
+            status='confirmed',
+            booking_date__lt=current_date
+        ).update(status='completed')
+
+        # Update past times today
+        cls.objects.filter(
+            status='confirmed',
+            booking_date=current_date,
+            end_time__lte=current_time
+        ).update(status='completed')
+
+    def clean(self):
+        """
+        Validation rules:
+        1. end_time must be after start_time.
+        2. No time-slot overlap for the same charger.
+        3. A user may only hold ONE confirmed booking per station at a time.
+           To rebook, they must cancel their existing booking first.
+        """
+        # ── 1. Time sanity ──────────────────────────────────────────────────
+        if self.start_time and self.end_time and self.start_time >= self.end_time:
+            raise DjangoValidationError("End time must be after start time.")
+
+        # ── 2. Charger overlap → only compared against this station_charger ─
+        if self.station_charger_id and self.booking_date and self.start_time and self.end_time:
+            time_conflicts = Booking.objects.filter(
+                station_charger=self.station_charger,
+                booking_date=self.booking_date,
+                status='confirmed',
+                start_time__lt=self.end_time,
+                end_time__gt=self.start_time,
+            ).exclude(pk=self.pk)
+
+            if time_conflicts.exists():
+                raise DjangoValidationError(
+                    "This time slot is already booked for this charger."
+                )
+
+        # ── 3. One active booking per user per station ───────────────────────
+        if self.station_id and self.user_id:
+            existing = Booking.objects.filter(
+                user_id=self.user_id,
+                station_id=self.station_id,
+                status='confirmed',
+            ).exclude(pk=self.pk)
+
+            if existing.exists():
+                raise DjangoValidationError(
+                    "You already have an active booking at this station. "
+                    "Please cancel it before making a new one."
+                )
+
+    def save(self, *args, **kwargs):
+        # Auto-populate station from station_charger if not set
+        if not self.station_id and self.station_charger_id:
+            self.station_id = self.station_charger.station_id
+        # Skip full_clean when only updating status (called with update_fields)
+        update_fields = kwargs.get('update_fields')
+        if update_fields is None or 'status' not in update_fields:
+            self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"Booking #{self.pk} – {self.station_charger} on {self.booking_date}"

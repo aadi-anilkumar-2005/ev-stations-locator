@@ -3,7 +3,7 @@ from django.views.generic import TemplateView, ListView, View
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db import transaction
 
-from stations.models import Station, Address, Amenity, StationAmenity, ChargerType, StationCharger
+from stations.models import Station, Address, Amenity, StationAmenity, ChargerType, StationCharger, Booking
 from django.db.models import Count
 
 class AdminRequiredMixin(UserPassesTestMixin):
@@ -20,7 +20,9 @@ class CSDashboardView(AdminRequiredMixin, TemplateView):
         context['active_page'] = 'dashboard'
         context['total_stations'] = Station.objects.count()
         context['total_charger_types'] = ChargerType.objects.count()
+        Booking.sync_statuses()
         context['total_amenities'] = Amenity.objects.filter(category='station').count()
+        context['total_bookings'] = Booking.objects.filter(status__in=['confirmed', 'completed']).count()
         return context
 
 # --- Stations ---
@@ -266,3 +268,18 @@ class CSAmenityDeleteView(AdminRequiredMixin, View):
     def post(self, request, pk):
         Amenity.objects.filter(id=pk).delete()
         return redirect('admin-cs-amenities')
+
+# --- Bookings ---
+class CSBookingListView(AdminRequiredMixin, ListView):
+    model = Booking
+    template_name = 'charging_station/bookings_list.html'
+    context_object_name = 'bookings'
+    
+    def get_queryset(self):
+        Booking.sync_statuses()
+        return Booking.objects.select_related('user', 'station', 'station_charger__charger_type').order_by('-created_at')
+        
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['active_page'] = 'bookings'
+        return context

@@ -22,4 +22,7 @@ urlpatterns = [
     path('amenities/add/', views.CSAmenityCreateView.as_view(), name='admin-cs-amenity-add'),
     path('amenities/<int:pk>/edit/', views.CSAmenityUpdateView.as_view(), name='admin-cs-amenity-edit'),
     path('amenities/<int:pk>/delete/', views.CSAmenityDeleteView.as_view(), name='admin-cs-amenity-delete'),
+
+    # Bookings
+    path('bookings/', views.CSBookingListView.as_view(), name='admin-cs-bookings'),
 ]

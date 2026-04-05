@@ -15,7 +15,7 @@ import {
   Heart,
   Zap,
   MapPin,
-  Share2,
+  CalendarCheck,
   CheckCircle,
   Wifi,
   ShoppingBag,
@@ -424,14 +424,18 @@ export default function DetailsScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             style={[
-              styles.shareButton,
-              { backgroundColor: theme === "dark" ? "#374151" : "#f3f4f6" },
+              styles.bookButton,
+              { backgroundColor: "#10b981" },
             ]}
+            onPress={() =>
+              router.push({
+                pathname: "/booking",
+                params: { stationId: station.id, stationName: station.name },
+              })
+            }
           >
-            <Share2 size={20} color={colors.text} strokeWidth={2} />
-            <Text style={[styles.shareButtonText, { color: colors.text }]}>
-              Share
-            </Text>
+            <CalendarCheck size={20} color="#fff" strokeWidth={2} />
+            <Text style={styles.bookButtonText}>Book</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -696,19 +700,24 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#fff",
   },
-  shareButton: {
+  bookButton: {
     flex: 1,
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
     gap: 8,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: "#10b981",
     padding: 16,
     borderRadius: 12,
+    shadowColor: "#10b981",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  shareButtonText: {
+  bookButtonText: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#374151",
+    fontWeight: "700",
+    color: "#fff",
   },
 });

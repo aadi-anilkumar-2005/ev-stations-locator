@@ -6,16 +6,17 @@ from django.db.models import Count, Q, F, FloatField, ExpressionWrapper
 from django.db.models.functions import Cast
 import math
 from math import sin, cos, asin, sqrt, radians
+import datetime
 
 from .models import (
     Station, StationCharger, Brand, Showroom, ShowroomAmenity,
     ServiceCenter, ServiceAmenity,
-    Favorite, ChargerType, Amenity
+    Favorite, ChargerType, Amenity, Booking
 )
 from .serializers import (
     FavoriteSerializer, StationSerializer, ShowroomSerializer,
     ServiceCenterSerializer, MapStationSerializer, MapShowroomSerializer,
-    MapServiceCenterSerializer
+    MapServiceCenterSerializer, BookingSerializer, BookingCreateSerializer
 )
 
 
@@ -60,10 +61,10 @@ def serialize_station(station, request=None):
         else:
             price_str = f"₹{min_p:.2f} - ₹{max_p:.2f}/kWh"
 
-    # Place chargers details
     place_chargers = []
     for sc in station.station_chargers.all():
         place_chargers.append({
+            'id': sc.id,
             'name': sc.charger_type.name,
             'connector_type': sc.charger_type.connector_type,
             'max_power_kw': sc.charger_type.max_power_kw,
@@ -551,3 +552,176 @@ def place_options(request):
         "charger_types": list(charger_types),
         "amenities": list(amenities)
     })
+
+
+# ── Booking Views ─────────────────────────────────────────────────────────────
+
+@api_view(['GET'])
+@api_permission_classes([permissions.AllowAny])
+def booking_availability(request, station_id):
+    """
+    GET /api/bookings/availability/<station_id>/?date=YYYY-MM-DD&charger_type=level2|dcfast
+
+    Returns:
+      - booked_slots: list of decimal hours blocked on this date/charger
+      - charger_rate: INR per hour
+      - charger_name: display name of the charger
+      - station_charger_id: FK id for the booking payload
+      - user_active_booking: null | {id, charger_name, booking_date, start_time, end_time}
+        If the authenticated user already has a confirmed booking at this station,
+        the frontend should block new bookings and prompt them to cancel first.
+    """
+    date_str = request.query_params.get('date')
+    charger_id = request.query_params.get('charger_id')
+    charger_type_key = request.query_params.get('charger_type', 'level2')
+
+    if not date_str:
+        return Response({'error': 'date parameter required (YYYY-MM-DD)'}, status=400)
+
+    try:
+        target_date = datetime.date.fromisoformat(date_str)
+    except ValueError:
+        return Response({'error': 'Invalid date format. Use YYYY-MM-DD'}, status=400)
+
+    try:
+        station = Station.objects.get(pk=station_id)
+    except Station.DoesNotExist:
+        return Response({'error': 'Station not found'}, status=404)
+
+    station_charger = None
+    if charger_id:
+        station_charger = station.station_chargers.filter(id=charger_id).first()
+    
+    if not station_charger:
+        # Fallback to legacy string matching
+        if charger_type_key == 'level2':
+            sc_qs = station.station_chargers.filter(
+                Q(charger_type__name__icontains='Level 2') |
+                Q(charger_type__name__icontains='Standard') |
+                Q(charger_type__connector_type__icontains='Type 2')
+            )
+        else:  # dcfast
+            sc_qs = station.station_chargers.filter(
+                Q(charger_type__name__icontains='DC') |
+                Q(charger_type__name__icontains='Fast') |
+                Q(charger_type__connector_type__icontains='CCS') |
+                Q(charger_type__connector_type__icontains='CHAdeMO')
+            )
+        station_charger = sc_qs.first()
+
+    if not station_charger:
+        station_charger = station.station_chargers.first()
+
+    if not station_charger:
+        return Response({
+            'booked_slots': [],
+            'charger_rate': '0.00',
+            'charger_name': 'Not Available',
+            'station_charger_id': None,
+            'user_active_booking': None,
+        })
+
+    # Fetch confirmed bookings for this charger on this date
+    day_bookings = Booking.objects.filter(
+        station_charger=station_charger,
+        booking_date=target_date,
+        status='confirmed',
+    )
+
+    # Convert time ranges → 30-min decimal slot list
+    booked_slots = []
+    for b in day_bookings:
+        h = b.start_time.hour + b.start_time.minute / 60
+        end_h = b.end_time.hour + b.end_time.minute / 60
+        while h < end_h:
+            booked_slots.append(round(h, 1))
+            h += 0.5
+
+    # Check if the requesting user already has an active booking at this station
+    user_active_booking = None
+    if request.user.is_authenticated:
+        existing = Booking.objects.filter(
+            user=request.user,
+            station=station,
+            status='confirmed',
+        ).select_related('station_charger__charger_type').first()
+
+        if existing:
+            user_active_booking = {
+                'id': existing.pk,
+                'charger_name': existing.station_charger.charger_type.name,
+                'booking_date': str(existing.booking_date),
+                'start_time': str(existing.start_time),
+                'end_time': str(existing.end_time),
+                'total_price': str(existing.total_price),
+            }
+
+    return Response({
+        'booked_slots': booked_slots,
+        'charger_rate': str(station_charger.start_price),
+        'charger_name': station_charger.charger_type.name,
+        'station_charger_id': station_charger.id,
+        'user_active_booking': user_active_booking,
+    })
+
+
+@api_view(['POST'])
+@api_permission_classes([permissions.IsAuthenticated])
+def create_booking(request):
+    """
+    POST /api/bookings/create/
+
+    Body:
+    {
+        "station_charger": <id>,
+        "booking_date": "YYYY-MM-DD",
+        "start_time": "HH:MM:SS",
+        "end_time": "HH:MM:SS",
+        "duration_hours": 1.5,
+        "total_price": "225.00"
+    }
+    """
+    serializer = BookingCreateSerializer(data=request.data, context={'request': request})
+    if serializer.is_valid():
+        booking = serializer.save()
+        return Response(BookingSerializer(booking).data, status=201)
+    return Response(serializer.errors, status=400)
+
+
+@api_view(['GET'])
+@api_permission_classes([permissions.IsAuthenticated])
+def my_bookings(request):
+    """
+    GET /api/bookings/my/
+    Returns all bookings for the authenticated user (most recent first).
+    """
+    bookings = Booking.objects.filter(
+        user=request.user
+    ).select_related(
+        'station_charger__station',
+        'station_charger__charger_type',
+    ).order_by('-booking_date', '-start_time')
+
+    serializer = BookingSerializer(bookings, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['POST'])
+@api_permission_classes([permissions.IsAuthenticated])
+def cancel_booking(request, booking_id):
+    """
+    POST /api/bookings/<booking_id>/cancel/
+    Soft-cancels the booking (sets status to 'cancelled').
+    Only the owner can cancel their own bookings.
+    """
+    try:
+        booking = Booking.objects.get(pk=booking_id, user=request.user)
+    except Booking.DoesNotExist:
+        return Response({'error': 'Booking not found'}, status=404)
+
+    if booking.status == 'cancelled':
+        return Response({'error': 'Booking is already cancelled'}, status=400)
+
+    booking.status = 'cancelled'
+    booking.save(update_fields=['status'])   # skip full_clean for simple status update
+    return Response(BookingSerializer(booking).data)
