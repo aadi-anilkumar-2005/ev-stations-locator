@@ -27,11 +27,9 @@ class ShowroomDashboardView(ShowroomRoleRequiredMixin, TemplateView):
             user_showrooms = Showroom.objects.filter(created_by=self.request.user)
             context['total_showrooms'] = user_showrooms.count()
             
-            # Show all brands (shared lookup data, no owner)
-            context['total_brands'] = Brand.objects.count()
-            
-            # Show all showroom amenities (shared lookup data)
-            context['total_amenities'] = Amenity.objects.filter(category='showroom').count()
+            # Show only this user's brands and amenities
+            context['total_brands'] = Brand.objects.filter(created_by=self.request.user).count()
+            context['total_amenities'] = Amenity.objects.filter(category='showroom', created_by=self.request.user).count()
         else:
             # Admin sees all data
             context['total_showrooms'] = Showroom.objects.count()
@@ -68,8 +66,13 @@ class ShowroomCreateView(ShowroomRoleRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context['active_page'] = 'showrooms'
         context['is_edit'] = False
-        context['brands'] = Brand.objects.all()
-        context['amenities'] = Amenity.objects.filter(category='showroom')
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            context['brands'] = Brand.objects.all()
+            context['amenities'] = Amenity.objects.filter(category='showroom')
+        else:
+            context['brands'] = Brand.objects.filter(created_by=user)
+            context['amenities'] = Amenity.objects.filter(category='showroom', created_by=user)
         context['selected_amenities'] = []
         return context
 
@@ -129,8 +132,13 @@ class ShowroomUpdateView(ShowroomRoleRequiredMixin, TemplateView):
         context['active_page'] = 'showrooms'
         context['is_edit'] = True
         context['showroom'] = showroom
-        context['brands'] = Brand.objects.all()
-        context['amenities'] = Amenity.objects.filter(category='showroom')
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            context['brands'] = Brand.objects.all()
+            context['amenities'] = Amenity.objects.filter(category='showroom')
+        else:
+            context['brands'] = Brand.objects.filter(created_by=user)
+            context['amenities'] = Amenity.objects.filter(category='showroom', created_by=user)
         context['selected_amenities'] = list(
             showroom.showroom_amenities.values_list('amenity_id', flat=True)
         )
@@ -194,8 +202,11 @@ class BrandListView(ShowroomRoleRequiredMixin, ListView):
     context_object_name = 'brands'
 
     def get_queryset(self):
-        # Brands are shared lookup data — show all to every showroom portal user
-        return Brand.objects.all().order_by('name')
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            return Brand.objects.all().order_by('name')
+        # Showroom users only see their own brands
+        return Brand.objects.filter(created_by=user).order_by('name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -218,7 +229,7 @@ class BrandCreateView(ShowroomRoleRequiredMixin, TemplateView):
             context = self.get_context_data()
             context['error'] = 'Brand name is required.'
             return self.render_to_response(context)
-        Brand.objects.create(name=name)
+        Brand.objects.create(name=name, created_by=request.user)
         return redirect('admin-showroom-brand-list')
 
 
@@ -226,7 +237,11 @@ class BrandUpdateView(ShowroomRoleRequiredMixin, TemplateView):
     template_name = 'showroom/brand_form_page.html'
 
     def get_brand(self):
-        return Brand.objects.get(brand_id=self.kwargs['pk'])
+        user = self.request.user
+        qs = Brand.objects.filter(brand_id=self.kwargs['pk'])
+        if not user.is_staff and getattr(user, 'role', None) != 'admin':
+            qs = qs.filter(created_by=user)
+        return qs.first()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -237,6 +252,8 @@ class BrandUpdateView(ShowroomRoleRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         brand = self.get_brand()
+        if not brand:
+            return redirect('admin-showroom-brand-list')
         name = request.POST.get('name', '').strip()
         if not name:
             context = self.get_context_data()
@@ -249,7 +266,11 @@ class BrandUpdateView(ShowroomRoleRequiredMixin, TemplateView):
 
 class BrandDeleteView(ShowroomRoleRequiredMixin, View):
     def post(self, request, pk):
-        Brand.objects.filter(brand_id=pk).delete()
+        user = request.user
+        qs = Brand.objects.filter(brand_id=pk)
+        if not user.is_staff and getattr(user, 'role', None) != 'admin':
+            qs = qs.filter(created_by=user)
+        qs.delete()
         return redirect('admin-showroom-brand-list')
 
 
@@ -261,8 +282,11 @@ class ShowroomAmenityListView(ShowroomRoleRequiredMixin, ListView):
     context_object_name = 'amenities'
 
     def get_queryset(self):
-        # Amenities are shared lookup data — show all to every showroom portal user
-        return Amenity.objects.filter(category='showroom').order_by('name')
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            return Amenity.objects.filter(category='showroom').order_by('name')
+        # Showroom users only see their own amenities
+        return Amenity.objects.filter(category='showroom', created_by=user).order_by('name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -285,7 +309,7 @@ class ShowroomAmenityCreateView(ShowroomRoleRequiredMixin, TemplateView):
             context = self.get_context_data()
             context['error'] = 'Amenity name is required.'
             return self.render_to_response(context)
-        Amenity.objects.create(name=name, category='showroom')
+        Amenity.objects.create(name=name, category='showroom', created_by=request.user)
         return redirect('admin-showroom-amenity-list')
 
 
@@ -293,7 +317,11 @@ class ShowroomAmenityUpdateView(ShowroomRoleRequiredMixin, TemplateView):
     template_name = 'showroom/amenity_form_page.html'
 
     def get_amenity(self):
-        return Amenity.objects.get(pk=self.kwargs['pk'])
+        user = self.request.user
+        qs = Amenity.objects.filter(pk=self.kwargs['pk'])
+        if not user.is_staff and getattr(user, 'role', None) != 'admin':
+            qs = qs.filter(created_by=user)
+        return qs.first()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -304,6 +332,8 @@ class ShowroomAmenityUpdateView(ShowroomRoleRequiredMixin, TemplateView):
 
     def post(self, request, *args, **kwargs):
         amenity = self.get_amenity()
+        if not amenity:
+            return redirect('admin-showroom-amenity-list')
         name = request.POST.get('name', '').strip()
         if not name:
             context = self.get_context_data()
@@ -317,5 +347,9 @@ class ShowroomAmenityUpdateView(ShowroomRoleRequiredMixin, TemplateView):
 
 class ShowroomAmenityDeleteView(ShowroomRoleRequiredMixin, View):
     def post(self, request, pk):
-        Amenity.objects.filter(pk=pk).delete()
+        user = request.user
+        qs = Amenity.objects.filter(pk=pk)
+        if not user.is_staff and getattr(user, 'role', None) != 'admin':
+            qs = qs.filter(created_by=user)
+        qs.delete()
         return redirect('admin-showroom-amenity-list')

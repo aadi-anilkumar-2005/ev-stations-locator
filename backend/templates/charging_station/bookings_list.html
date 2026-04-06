@@ -31,8 +31,11 @@
                             </div>
                         </td>
                         <td>
-                            <div class="fw-medium text-secondary">
-                                {{ booking.user.username }}
+                            <div class="fw-medium text-dark">
+                                {{ booking.user.full_name|default:booking.user.username }}
+                            </div>
+                            <div class="text-muted small mt-1">
+                                {{ booking.user.email }}
                             </div>
                         </td>
                         <td>

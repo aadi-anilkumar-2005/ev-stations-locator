@@ -28,7 +28,7 @@ class ServiceCenterDashboardView(ServiceRoleRequiredMixin, TemplateView):
                 'active_stations': 0,
                 'offline_stations': 0,
                 'managed_locations': user_service_centers.count(),
-                'active_amenities': Amenity.objects.filter(category='service').count(),
+                'active_amenities': Amenity.objects.filter(category='service', created_by=self.request.user).count(),
             }
         else:
             # Admin sees all data
@@ -67,7 +67,11 @@ class ServiceLocationCreateView(ServiceRoleRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['active_page'] = 'locations'
-        context['amenities'] = Amenity.objects.filter(category='service')
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            context['amenities'] = Amenity.objects.filter(category='service')
+        else:
+            context['amenities'] = Amenity.objects.filter(category='service', created_by=user)
         context['selected_amenities'] = []
         return context
 
@@ -116,6 +120,13 @@ class ServiceLocationUpdateView(ServiceRoleRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['active_page'] = 'locations'
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            context['amenities'] = Amenity.objects.filter(category='service')
+        else:
+            context['amenities'] = Amenity.objects.filter(category='service', created_by=user)
+        sc = self.get_object()
+        context['selected_amenities'] = list(sc.service_amenities.values_list('amenity_id', flat=True))
         return context
     
     def get_object(self, queryset=None):
@@ -181,8 +192,11 @@ class ServiceAmenitiesListView(ServiceRoleRequiredMixin, ListView):
     context_object_name = 'amenities'
 
     def get_queryset(self):
-        # Amenities are shared lookup data — show all to every service portal user
-        return Amenity.objects.filter(category='service').order_by('name')
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            return Amenity.objects.filter(category='service').order_by('name')
+        # Service users only see their own amenities
+        return Amenity.objects.filter(category='service', created_by=user).order_by('name')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -204,13 +218,20 @@ class ServiceAmenityCreateView(ServiceRoleRequiredMixin, TemplateView):
             context = self.get_context_data()
             context['error'] = 'Amenity name is required.'
             return self.render_to_response(context)
-        Amenity.objects.create(name=name, category='service')
+        Amenity.objects.create(name=name, category='service', created_by=request.user)
         return redirect('service-amenities-list')
 
 class ServiceAmenityUpdateView(ServiceRoleRequiredMixin, UpdateView):
     model = Amenity
     template_name = 'service_center/amenity_form_page.html'
     fields = ['name']
+
+    def get_object(self, queryset=None):
+        user = self.request.user
+        qs = Amenity.objects.filter(pk=self.kwargs['pk'])
+        if not user.is_staff and getattr(user, 'role', None) != 'admin':
+            qs = qs.filter(created_by=user)
+        return qs.first()
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -226,6 +247,8 @@ class ServiceAmenityUpdateView(ServiceRoleRequiredMixin, UpdateView):
             context['error'] = 'Amenity name is required.'
             return self.render_to_response(context)
         am = self.get_object()
+        if not am:
+            return redirect('service-amenities-list')
         am.name = name
         am.category = 'service'
         am.save()
@@ -233,5 +256,9 @@ class ServiceAmenityUpdateView(ServiceRoleRequiredMixin, UpdateView):
 
 class ServiceAmenityDeleteView(ServiceRoleRequiredMixin, View):
     def post(self, request, pk):
-        Amenity.objects.filter(id=pk).delete()
+        user = request.user
+        qs = Amenity.objects.filter(id=pk)
+        if not user.is_staff and getattr(user, 'role', None) != 'admin':
+            qs = qs.filter(created_by=user)
+        qs.delete()
         return redirect('service-amenities-list')

@@ -8,11 +8,18 @@ class Amenity(models.Model):
         ('service', 'Service'),
     ]
 
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     category = models.CharField(
         max_length=20,
         choices=CATEGORY_CHOICES,
         default='general'
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='User who created this amenity'
     )
 
     class Meta:
@@ -23,9 +30,16 @@ class Amenity(models.Model):
         return self.name
 
 class ChargerType(models.Model):
-    name = models.CharField(max_length=100, unique=True)
+    name = models.CharField(max_length=100)
     connector_type = models.CharField(max_length=100, help_text="e.g. Type 2, CCS2, CHAdeMO")
     max_power_kw = models.FloatField(help_text="Max power output in kW")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='User who created this charger type'
+    )
 
     class Meta:
         db_table = 'ev_charger_standards'
@@ -131,8 +145,15 @@ class StationCharger(models.Model):
 # Brands and Showrooms
 class Brand(models.Model):
     brand_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100, unique=True)
-    
+    name = models.CharField(max_length=100)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text='User who created this brand'
+    )
+
     class Meta:
         db_table = 'vehicle_brands'
 

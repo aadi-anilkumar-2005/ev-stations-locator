@@ -24,9 +24,9 @@ class CSDashboardView(AdminRequiredMixin, TemplateView):
             user_stations = Station.objects.filter(created_by=self.request.user)
             context['total_stations'] = user_stations.count()
             
-            # Charger types and amenities are shared lookup data — show all counts
-            context['total_charger_types'] = ChargerType.objects.count()
-            context['total_amenities'] = Amenity.objects.filter(category='station').count()
+            # Show only this user's charger types and amenities
+            context['total_charger_types'] = ChargerType.objects.filter(created_by=self.request.user).count()
+            context['total_amenities'] = Amenity.objects.filter(category='station', created_by=self.request.user).count()
             
             # Get bookings for user's stations
             Booking.sync_statuses()
@@ -69,8 +69,13 @@ class CSStationCreateView(AdminRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context['active_page'] = 'stations'
         context['is_edit'] = False
-        context['amenities'] = Amenity.objects.filter(category='station')
-        context['charger_types'] = ChargerType.objects.all()
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            context['amenities'] = Amenity.objects.filter(category='station')
+            context['charger_types'] = ChargerType.objects.all()
+        else:
+            context['amenities'] = Amenity.objects.filter(category='station', created_by=user)
+            context['charger_types'] = ChargerType.objects.filter(created_by=user)
         return context
         
     def post(self, request, *args, **kwargs):
@@ -133,8 +138,13 @@ class CSStationUpdateView(AdminRequiredMixin, TemplateView):
         context['active_page'] = 'stations'
         context['is_edit'] = True
         context['station'] = station
-        context['amenities'] = Amenity.objects.filter(category='station')
-        context['charger_types'] = ChargerType.objects.all()
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            context['amenities'] = Amenity.objects.filter(category='station')
+            context['charger_types'] = ChargerType.objects.all()
+        else:
+            context['amenities'] = Amenity.objects.filter(category='station', created_by=user)
+            context['charger_types'] = ChargerType.objects.filter(created_by=user)
         context['selected_amenities'] = list(station.station_amenities.values_list('amenity_id', flat=True))
         return context
         
@@ -205,8 +215,11 @@ class CSChargerTypeListView(AdminRequiredMixin, ListView):
     context_object_name = 'charger_types'
     
     def get_queryset(self):
-        # ChargerTypes are shared lookup data — show all to every station portal user
-        return ChargerType.objects.all().order_by('name')
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            return ChargerType.objects.all().order_by('name')
+        # Station users only see their own charger types
+        return ChargerType.objects.filter(created_by=user).order_by('name')
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -225,20 +238,34 @@ class CSChargerTypeCreateView(AdminRequiredMixin, TemplateView):
         name = request.POST.get('name')
         connector = request.POST.get('connector_type')
         power = request.POST.get('max_power_kw')
-        ChargerType.objects.create(name=name, connector_type=connector, max_power_kw=power)
+        ChargerType.objects.create(
+            name=name,
+            connector_type=connector,
+            max_power_kw=power,
+            created_by=request.user
+        )
         return redirect('admin-cs-chargers')
 
 class CSChargerTypeUpdateView(AdminRequiredMixin, TemplateView):
     template_name = 'charging_station/charger_type_form.html'
     
+    def get_charger_type(self, pk):
+        user = self.request.user
+        qs = ChargerType.objects.filter(id=pk)
+        if not user.is_staff and getattr(user, 'role', None) != 'admin':
+            qs = qs.filter(created_by=user)
+        return qs.first()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['active_page'] = 'charger_types'
-        context['charger'] = ChargerType.objects.get(id=self.kwargs['pk'])
+        context['charger'] = self.get_charger_type(self.kwargs['pk'])
         return context
         
     def post(self, request, pk):
-        ct = ChargerType.objects.get(id=pk)
+        ct = self.get_charger_type(pk)
+        if not ct:
+            return redirect('admin-cs-chargers')
         ct.name = request.POST.get('name')
         ct.connector_type = request.POST.get('connector_type')
         ct.max_power_kw = request.POST.get('max_power_kw')
@@ -247,7 +274,11 @@ class CSChargerTypeUpdateView(AdminRequiredMixin, TemplateView):
 
 class CSChargerTypeDeleteView(AdminRequiredMixin, View):
     def post(self, request, pk):
-        ChargerType.objects.filter(id=pk).delete()
+        user = request.user
+        qs = ChargerType.objects.filter(id=pk)
+        if not user.is_staff and getattr(user, 'role', None) != 'admin':
+            qs = qs.filter(created_by=user)
+        qs.delete()
         return redirect('admin-cs-chargers')
 
 
@@ -258,8 +289,11 @@ class CSAmenityListView(AdminRequiredMixin, ListView):
     context_object_name = 'amenities'
     
     def get_queryset(self):
-        # Amenities are shared lookup data — show all to every station portal user
-        return Amenity.objects.filter(category='station').order_by('name')
+        user = self.request.user
+        if user.is_staff or getattr(user, 'role', None) == 'admin':
+            return Amenity.objects.filter(category='station').order_by('name')
+        # Station users only see their own amenities
+        return Amenity.objects.filter(category='station', created_by=user).order_by('name')
         
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -277,27 +311,40 @@ class CSAmenityCreateView(AdminRequiredMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         name = request.POST.get('name')
         if name:
-            Amenity.objects.create(name=name, category='station')
+            Amenity.objects.create(name=name, category='station', created_by=request.user)
         return redirect('admin-cs-amenities')
 
 class CSAmenityUpdateView(AdminRequiredMixin, TemplateView):
     template_name = 'charging_station/amenity_form.html'
     
+    def get_amenity(self, pk):
+        user = self.request.user
+        qs = Amenity.objects.filter(id=pk)
+        if not user.is_staff and getattr(user, 'role', None) != 'admin':
+            qs = qs.filter(created_by=user)
+        return qs.first()
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['active_page'] = 'amenities'
-        context['amenity'] = Amenity.objects.get(id=self.kwargs['pk'])
+        context['amenity'] = self.get_amenity(self.kwargs['pk'])
         return context
         
     def post(self, request, pk):
-        amenity = Amenity.objects.get(id=pk)
+        amenity = self.get_amenity(pk)
+        if not amenity:
+            return redirect('admin-cs-amenities')
         amenity.name = request.POST.get('name')
         amenity.save()
         return redirect('admin-cs-amenities')
 
 class CSAmenityDeleteView(AdminRequiredMixin, View):
     def post(self, request, pk):
-        Amenity.objects.filter(id=pk).delete()
+        user = request.user
+        qs = Amenity.objects.filter(id=pk)
+        if not user.is_staff and getattr(user, 'role', None) != 'admin':
+            qs = qs.filter(created_by=user)
+        qs.delete()
         return redirect('admin-cs-amenities')
 
 # --- Bookings ---
