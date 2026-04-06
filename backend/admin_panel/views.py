@@ -269,6 +269,18 @@ class AdminDeleteUserView(AdminRequiredMixin, DeleteView):
     model = User
     success_url = reverse_lazy('admin-users')
 
+    def get(self, request, *args, **kwargs):
+        # Redirect GET requests — deletion must come from the modal POST
+        return redirect(self.success_url)
+
+    def post(self, request, *args, **kwargs):
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        user = get_object_or_404(User, pk=kwargs['pk'])
+        user.delete()
+        messages.success(request, f"User has been deleted successfully.")
+        return redirect(self.success_url)
+
 class AdminSettingsView(AdminRequiredMixin, TemplateView):
     template_name = 'admin/settings/settings.html'
 
