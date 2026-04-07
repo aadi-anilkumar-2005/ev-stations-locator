@@ -1,55 +1,200 @@
 {% extends 'charging_station/base.html' %}
 
 {% block content %}
-<div class="view-section active">
-    <header class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h3 class="fw-bold mb-0 text-dark">Charger Types</h3>
-            <p class="text-muted mb-0">Manage the hardware specifications of your stations.</p>
-        </div>
-        <a href="{% url 'admin-cs-charger-add' %}" class="btn btn-emerald rounded-3 px-3 shadow-sm">
-            <i data-lucide="plus" class="w-4 h-4 me-1 d-inline"></i> Add Type
-        </a>
-    </header>
+<style>
+    /* Premium Design System */
+    .view-section {
+        background-color: #f4f6f8; /* Made slightly darker to contrast with the white card */
+        min-height: 100vh;
+        padding-top: 2rem;
+    }
+    
+    .premium-card {
+        background: #ffffff;
+        border: none; /* Removed the conflicting border */
+        box-shadow: 0 4px 24px rgba(0,0,0,0.04); /* Softened the shadow for a floating effect */
+        border-radius: 1rem;
+        overflow: hidden;
+    }
 
-    <div class="card shadow-sm" style="max-width: 900px;">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="ps-4 border-0">Name</th>
-                        <th class="border-0">Connector Type</th>
-                        <th class="border-0">Max Power (kW)</th>
-                        <th class="text-end pe-4 border-0">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for ct in charger_types %}
-                    <tr>
-                        <td class="ps-4 fw-bold text-dark">{{ ct.name }}</td>
-                        <td><span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">{{ ct.connector_type }}</span></td>
-                        <td class="fw-medium text-dark">{{ ct.max_power_kw }} kW</td>
-                        <td class="text-end pe-4">
-                            <div class="d-flex justify-content-end gap-2">
-                                <a href="{% url 'admin-cs-charger-edit' ct.id %}" class="btn btn-sm btn-light border rounded-circle shadow-sm hover-card">
-                                    <i data-lucide="edit-2" class="w-4 h-4 text-primary"></i>
+    /* Buttons */
+    .btn-emerald {
+        background-color: #10b981;
+        border-color: #10b981;
+        color: white;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+    .btn-emerald:hover {
+        background-color: #059669;
+        border-color: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+        color: white;
+    }
+
+    /* Table Styles */
+    .table-custom {
+        margin-bottom: 0;
+    }
+    
+    .table-custom th {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6b7280;
+        background-color: transparent; /* Removed the #f9fafb gray to unify the white card */
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .table-custom td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+        transition: background-color 0.2s ease;
+    }
+    
+    .table-custom tbody tr:hover td {
+        background-color: #f9fafb;
+    }
+    
+    .table-custom tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Badges */
+    .badge-custom {
+        font-weight: 600;
+        padding: 0.5em 1em;
+        font-size: 0.75rem;
+        letter-spacing: 0.3px;
+    }
+
+    /* Action Buttons */
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: none;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-edit {
+        color: #3b82f6;
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    .btn-edit:hover {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: #2563eb;
+        transform: translateY(-2px);
+    }
+    
+    .btn-delete {
+        color: #ef4444;
+        background-color: rgba(239, 68, 68, 0.1);
+    }
+    .btn-delete:hover {
+        background-color: rgba(239, 68, 68, 0.2);
+        color: #dc2626;
+        transform: translateY(-2px);
+    }
+
+    /* Empty State */
+    .empty-state-icon {
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f3f4f6;
+        border-radius: 50%;
+        margin: 0 auto 1.5rem;
+        color: #9ca3af;
+    }
+</style>
+
+<div class="view-section px-3 px-md-4">
+    <div class="container-fluid max-w-7xl mx-auto" style="max-width: 1000px;">
+        
+        <!-- Header -->
+        <header class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-5">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">Charger Types</h3>
+                <p class="text-secondary mb-0">Manage the hardware specifications of your stations.</p>
+            </div>
+            <a href="{% url 'admin-cs-charger-add' %}" class="btn btn-emerald rounded-3 px-4 py-2 shadow-sm d-flex align-items-center gap-2">
+                <i data-lucide="plus" class="w-5 h-5"></i> Add Type
+            </a>
+        </header>
+
+        <!-- Table Card -->
+        <div class="card premium-card">
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Connector Type</th>
+                            <th>Max Power (kW)</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ct in charger_types %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-dark fs-6 d-flex align-items-center gap-2">
+                                    <i data-lucide="zap" class="w-4 h-4 text-emerald"></i>
+                                    {{ ct.name }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-custom bg-light text-secondary border rounded-pill d-inline-flex align-items-center gap-1">
+                                    <i data-lucide="plug" class="w-3 h-3"></i> 
+                                    {{ ct.connector_type }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge badge-custom bg-dark bg-opacity-10 text-dark border rounded-pill">
+                                    {{ ct.max_power_kw }} kW
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{% url 'admin-cs-charger-edit' ct.id %}" class="btn-action btn-edit" title="Edit Charger Type">
+                                        <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                    </a>
+                                    <form action="{% url 'admin-cs-charger-delete' ct.id %}" method="POST" class="m-0 p-0" onsubmit="return confirm('Remove this charger type?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-action btn-delete" title="Delete Charger Type">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5">
+                                <div class="empty-state-icon">
+                                    <i data-lucide="plug" class="w-8 h-8"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">No Charger Types Found</h5>
+                                <p class="text-secondary mb-4">You haven't defined any hardware specifications yet.</p>
+                                <a href="{% url 'admin-cs-charger-add' %}" class="btn btn-emerald rounded-3 px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2">
+                                    <i data-lucide="plus" class="w-5 h-5"></i> Add First Type
                                 </a>
-                                <form action="{% url 'admin-cs-charger-delete' ct.id %}" method="POST" class="d-inline" onsubmit="return confirm('Remove this charger type?');">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-sm btn-light border rounded-circle shadow-sm hover-card">
-                                        <i data-lucide="trash-2" class="w-4 h-4 text-danger"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center text-muted py-4">No charger types added yet.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

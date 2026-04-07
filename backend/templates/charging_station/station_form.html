@@ -1,111 +1,292 @@
 {% extends 'charging_station/base.html' %}
 
 {% block content %}
-<div class="view-section active">
-    <header class="d-flex align-items-center gap-3 mb-4">
-        <a href="{% url 'admin-cs-stations' %}" class="btn btn-white shadow-sm border rounded-circle p-2">
-            <i data-lucide="arrow-left" class="w-5 h-5 text-dark"></i>
+<style>
+    /* Premium Form Styles */
+    .view-section {
+        background-color: #fcfcfc;
+        min-height: 100vh;
+        padding-top: 2rem;
+    }
+    
+    .premium-card {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 24px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .premium-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+    }
+
+    .form-label-custom {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6b7280;
+        margin-bottom: 0.5rem;
+    }
+
+    .custom-input {
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.6rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        color: #374151;
+        transition: all 0.2s ease;
+    }
+
+    .custom-input:focus {
+        background-color: #ffffff;
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+        outline: none;
+    }
+
+    .input-group-text-custom {
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-right: none;
+        border-radius: 0.6rem 0 0 0.6rem;
+        color: #9ca3af;
+    }
+
+    .custom-input.border-start-0 {
+        border-left-color: transparent;
+    }
+    
+    .custom-input.border-start-0:focus {
+        border-left-color: #10b981;
+    }
+
+    /* Icon Wrappers for Section Headers */
+    .icon-box {
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+    .icon-box-primary { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+    .icon-box-success { background-color: rgba(25, 135, 84, 0.1); color: #198754; }
+    .icon-box-danger { background-color: rgba(220, 53, 69, 0.1); color: #dc3545; }
+    .icon-box-warning { background-color: rgba(255, 193, 7, 0.15); color: #d39e00; }
+    .icon-box-info { background-color: rgba(13, 202, 240, 0.1); color: #0dcaf0; }
+
+    /* Buttons */
+    .btn-emerald {
+        background-color: #10b981;
+        border-color: #10b981;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    .btn-emerald:hover {
+        background-color: #059669;
+        border-color: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+        color: white;
+    }
+    
+    .btn-back {
+        transition: all 0.2s ease;
+        background: #ffffff;
+    }
+    .btn-back:hover {
+        background: #f3f4f6;
+        transform: translateX(-2px);
+    }
+
+    /* Custom Amenities Checkboxes */
+    .amenity-checkbox {
+        display: none;
+    }
+    .amenity-label {
+        display: flex;
+        align-items: center;
+        padding: 0.85rem 1.25rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #ffffff;
+        color: #4b5563;
+        font-weight: 500;
+        height: 100%;
+    }
+    .amenity-label:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+    }
+    .amenity-checkbox:checked + .amenity-label {
+        background-color: rgba(16, 185, 129, 0.05);
+        border-color: #10b981;
+        color: #059669;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+    }
+    .amenity-checkbox:checked + .amenity-label .check-icon {
+        opacity: 1;
+        transform: scale(1);
+    }
+    .check-icon {
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-right: 8px;
+        color: #10b981;
+    }
+</style>
+
+<div class="view-section px-3">
+    <!-- Page Header -->
+    <header class="d-flex align-items-center gap-3 mb-5 mx-auto" style="max-width: 900px;">
+        <a href="{% url 'admin-cs-stations' %}" class="btn btn-back rounded-circle p-2 shadow-sm border text-secondary">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
         </a>
         <div>
-            <h3 class="fw-bold mb-0 text-dark">{% if is_edit %}Edit Station{% else %}Add New Station{% endif %}</h3>
-            <p class="text-muted mb-0">Set details, hardware config, and amenities.</p>
+            <h3 class="fw-bold mb-1 text-dark">{% if is_edit %}Edit Station{% else %}Add New Station{% endif %}</h3>
+            <p class="text-secondary mb-0">Set details, hardware config, and amenities.</p>
         </div>
     </header>
 
     {% if error %}
-    <div class="alert alert-danger shadow-sm border-0 alert-dismissible fade show" role="alert">
-        <i data-lucide="alert-circle" class="w-5 h-5 d-inline me-2 mb-1"></i>
+    <div class="alert alert-danger rounded-3 mb-4 mx-auto shadow-sm border-0 d-flex align-items-center gap-2" style="max-width: 900px;">
+        <i data-lucide="alert-circle" class="w-5 h-5"></i>
         {{ error }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
     {% endif %}
 
-    <form method="POST" action="{% if is_edit %}{% url 'admin-cs-station-edit' station.station_id %}{% else %}{% url 'admin-cs-station-add' %}{% endif %}" class="mx-auto mx-md-0" style="max-width: 900px;">
+    <form method="POST" action="{% if is_edit %}{% url 'admin-cs-station-edit' station.station_id %}{% else %}{% url 'admin-cs-station-add' %}{% endif %}" class="mx-auto" style="max-width: 900px;" novalidate>
         {% csrf_token %}
         
-        <div class="card shadow-sm mb-4">
+        <!-- Section 1: Station Details -->
+        <div class="card premium-card rounded-4 mb-4">
             <div class="card-body p-4 p-md-5">
-                <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
-                    <i data-lucide="info" class="text-primary"></i> Station Details
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-3">
+                    <span class="icon-box icon-box-primary">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                    </span>
+                    Station Details
                 </h5>
                 <div class="row g-4">
                     <div class="col-md-6">
-                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Station Name</label>
-                        <input type="text" name="name" class="form-control form-control-lg bg-light" placeholder="e.g. Downtown Fast Charge" value="{{ station.name|default:'' }}" required>
+                        <label class="form-label form-label-custom">Station Name</label>
+                        <input type="text" name="name" class="form-control custom-input" placeholder="e.g. Downtown Fast Charge" value="{{ station.name|default:'' }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Operator Name</label>
-                        <input type="text" name="operator_name" class="form-control form-control-lg bg-light" placeholder="e.g. ChargePoint Network" value="{{ station.operator_name|default:'' }}" required>
+                        <label class="form-label form-label-custom">Operator Name</label>
+                        <input type="text" name="operator_name" class="form-control custom-input" placeholder="e.g. ChargePoint Network" value="{{ station.operator_name|default:'' }}" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Current Status</label>
-                        <select name="status" class="form-select bg-light">
-                            <option value="active" {% if station.status == 'active' %}selected{% endif %}>Active</option>
-                            <option value="maintenance" {% if station.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
-                            <option value="offline" {% if station.status == 'offline' %}selected{% endif %}>Offline</option>
+                        <label class="form-label form-label-custom">Current Status</label>
+                        <select name="status" class="form-select custom-input">
+                            <option value="active" {% if station.status == 'active' %}selected{% endif %}>🟢 Active</option>
+                            <option value="maintenance" {% if station.status == 'maintenance' %}selected{% endif %}>🟡 Maintenance</option>
+                            <option value="offline" {% if station.status == 'offline' %}selected{% endif %}>🔴 Offline</option>
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Opening Hours</label>
-                        <input type="text" name="opening_hours" class="form-control bg-light" placeholder="e.g. 24/7" value="{{ station.opening_hours|default:'' }}">
+                        <label class="form-label form-label-custom">Opening Hours</label>
+                        <input type="text" name="opening_hours" class="form-control custom-input" placeholder="e.g. 24/7" value="{{ station.opening_hours|default:'' }}">
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card shadow-sm mb-4">
+        <!-- Section 2: Location -->
+        <div class="card premium-card rounded-4 mb-4">
             <div class="card-body p-4 p-md-5">
-                <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
-                    <i data-lucide="map-pin" class="text-danger"></i> Location
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-3">
+                    <span class="icon-box icon-box-danger">
+                        <i data-lucide="map-pin" class="w-5 h-5"></i>
+                    </span>
+                    Location
                 </h5>
                 <div class="mb-4">
-                    <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Full Address</label>
-                    <textarea name="address" class="form-control bg-light" rows="2" placeholder="123 Main Street" required>{{ station.address.street|default:'' }}</textarea>
+                    <label class="form-label form-label-custom">Full Address</label>
+                    <textarea name="address" class="form-control custom-input" rows="2" placeholder="123 Main Street" required>{{ station.address.street|default:'' }}</textarea>
                 </div>
                 <div class="row g-4 mb-4">
                     <div class="col-md-4">
-                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">City</label>
-                        <input type="text" name="city" class="form-control bg-light" placeholder="e.g. Austin" value="{{ station.address.city|default:'' }}" required>
+                        <label class="form-label form-label-custom">City</label>
+                        <input type="text" name="city" class="form-control custom-input" placeholder="e.g. Austin" value="{{ station.address.city|default:'' }}" required>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">State/Province</label>
-                        <input type="text" name="state" class="form-control bg-light" placeholder="e.g. TX" value="{{ station.address.state|default:'' }}" required>
+                        <label class="form-label form-label-custom">State/Province</label>
+                        <input type="text" name="state" class="form-control custom-input" placeholder="e.g. TX" value="{{ station.address.state|default:'' }}" required>
                     </div>
                     <div class="col-md-4">
-                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">Zip Code</label>
-                        <input type="text" name="zip_code" class="form-control bg-light" placeholder="e.g. 78701" value="{{ station.address.zip_code|default:'' }}" required>
+                        <label class="form-label form-label-custom">Zip Code</label>
+                        <input type="text" name="zip_code" class="form-control custom-input" placeholder="e.g. 78701" value="{{ station.address.zip_code|default:'' }}" required>
                     </div>
                 </div>
-                <div class="row g-3">
+
+                <hr class="text-muted opacity-25 my-4">
+
+                <div class="row g-4">
                     <div class="col-12">
-                        <label class="form-label text-secondary fw-bold small text-uppercase letter-spacing">GPS Coordinates (Pin on Map)</label>
-                        <div id="map" class="shadow-sm"></div>
-                        <div class="d-flex gap-3 mt-3">
-                            <input type="text" id="mapLat" name="latitude" class="form-control font-monospace bg-light text-center" placeholder="Latitude" value="{{ station.address.latitude|default:'' }}" readonly required>
-                            <input type="text" id="mapLng" name="longitude" class="form-control font-monospace bg-light text-center" placeholder="Longitude" value="{{ station.address.longitude|default:'' }}" readonly required>
+                        <label class="form-label form-label-custom">Map Pin Coordinates</label>
+                        <div class="mb-3 bg-light p-2 rounded-3 border">
+                            <div class="row g-2">
+                                <div class="col-md-9">
+                                    <input type="text" id="locationSearch" class="form-control custom-input border-0 bg-white" placeholder="Search a location to set pin (e.g. Kerala, India)">
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" id="searchLocationBtn" class="btn btn-dark w-100 h-100 rounded-3">Find on Map</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="map" class="shadow-sm border" style="height: 380px; border-radius: 12px; z-index: 1;"></div>
+                        
+                        <div class="d-flex align-items-center justify-content-between mt-3 bg-light p-3 rounded-3 border">
+                            <div class="small text-muted d-flex align-items-center gap-2">
+                                <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
+                                Click/Drag marker to fine-tune
+                            </div>
+                            <div class="d-flex gap-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted small fw-bold">LAT:</span>
+                                    <input type="text" id="mapLat" name="latitude" class="form-control form-control-sm bg-white border-0 text-center shadow-sm" style="width: 100px;" value="{{ station.address.latitude|default:'' }}" readonly required>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted small fw-bold">LNG:</span>
+                                    <input type="text" id="mapLng" name="longitude" class="form-control form-control-sm bg-white border-0 text-center shadow-sm" style="width: 100px;" value="{{ station.address.longitude|default:'' }}" readonly required>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <div class="card shadow-sm mb-4">
+        <!-- Section 3: Charger Configuration -->
+        <div class="card premium-card rounded-4 mb-4">
             <div class="card-body p-4 p-md-5">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="fw-bold mb-0 d-flex align-items-center gap-2">
-                        <i data-lucide="plug" class="text-info"></i> Charger Configuration
+                    <h5 class="fw-bold mb-0 d-flex align-items-center gap-3">
+                        <span class="icon-box icon-box-info">
+                            <i data-lucide="plug" class="w-5 h-5"></i>
+                        </span>
+                        Charger Configuration
                     </h5>
-                    <button type="button" class="btn btn-sm btn-outline-secondary fw-bold shadow-sm" onclick="addChargerRow()">
-                        + Add Unit
+                    <button type="button" class="btn btn-dark btn-sm rounded-3 shadow-sm px-3 py-2 fw-bold d-flex align-items-center gap-2" onclick="addChargerRow()">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Add Unit
                     </button>
                 </div>
+                
                 <div id="charger-rows-container">
                     {% if is_edit and station.station_chargers.all %}
                         {% for sc in station.station_chargers.all %}
-                        <div class="row g-3 mb-3 border-bottom pb-3 charger-row align-items-end">
+                        <div class="row g-4 mb-4 border-bottom pb-4 charger-row align-items-end">
                             <div class="col-md-4">
-                                <label class="form-label text-secondary small fw-bold">Charger Type</label>
-                                <select name="charger_types[]" class="form-select bg-light" required>
+                                <label class="form-label form-label-custom">Charger Type</label>
+                                <select name="charger_types[]" class="form-select custom-input" required>
                                     <option value="">Select Type</option>
                                     {% for ct in charger_types %}
                                     <option value="{{ ct.id }}" {% if ct.id == sc.charger_type_id %}selected{% endif %}>{{ ct.name }} ({{ ct.max_power_kw }}kW)</option>
@@ -113,31 +294,31 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label text-secondary small fw-bold">Start Price</label>
+                                <label class="form-label form-label-custom">Start Price</label>
                                 <div class="input-group">
-                                    <span class="input-group-text border-end-0 bg-white">$</span>
-                                    <input type="number" step="0.01" name="start_prices[]" class="form-control border-start-0 ps-0 bg-white" value="{{ sc.start_price }}" required>
+                                    <span class="input-group-text input-group-text-custom">$</span>
+                                    <input type="number" step="0.01" name="start_prices[]" class="form-control custom-input border-start-0 ps-0" value="{{ sc.start_price }}" required>
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label text-secondary small fw-bold">End Price</label>
+                                <label class="form-label form-label-custom">End Price</label>
                                 <div class="input-group">
-                                    <span class="input-group-text border-end-0 bg-white">$</span>
-                                    <input type="number" step="0.01" name="end_prices[]" class="form-control border-start-0 ps-0 bg-white" value="{{ sc.end_price }}" required>
+                                    <span class="input-group-text input-group-text-custom">$</span>
+                                    <input type="number" step="0.01" name="end_prices[]" class="form-control custom-input border-start-0 ps-0" value="{{ sc.end_price }}" required>
                                 </div>
                             </div>
                             <div class="col-md-2">
-                                <button type="button" class="btn btn-light text-danger border w-100" onclick="this.closest('.charger-row').remove()">
-                                    <i data-lucide="trash-2" class="w-5 h-5 mx-auto"></i>
+                                <button type="button" class="btn btn-light text-danger border custom-input w-100 d-flex justify-content-center align-items-center bg-white shadow-sm" onclick="this.closest('.charger-row').remove()" style="height: 46px;">
+                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
                                 </button>
                             </div>
                         </div>
                         {% endfor %}
                     {% else %}
-                        <div class="row g-3 mb-3 border-bottom pb-3 charger-row align-items-end">
+                        <div class="row g-4 mb-4 border-bottom pb-4 charger-row align-items-end">
                             <div class="col-md-4">
-                                <label class="form-label text-secondary small fw-bold">Charger Type</label>
-                                <select name="charger_types[]" class="form-select bg-light" required>
+                                <label class="form-label form-label-custom">Charger Type</label>
+                                <select name="charger_types[]" class="form-select custom-input" required>
                                     <option value="">Select Type</option>
                                     {% for ct in charger_types %}
                                     <option value="{{ ct.id }}">{{ ct.name }} ({{ ct.max_power_kw }}kW)</option>
@@ -145,22 +326,22 @@
                                 </select>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label text-secondary small fw-bold">Start Price</label>
+                                <label class="form-label form-label-custom">Start Price</label>
                                 <div class="input-group">
-                                    <span class="input-group-text border-end-0 bg-white">$</span>
-                                    <input type="number" step="0.01" name="start_prices[]" class="form-control border-start-0 ps-0 bg-white" value="0.00" required>
+                                    <span class="input-group-text input-group-text-custom">$</span>
+                                    <input type="number" step="0.01" name="start_prices[]" class="form-control custom-input border-start-0 ps-0" value="0.00" required>
                                 </div>
                             </div>
                             <div class="col-md-3">
-                                <label class="form-label text-secondary small fw-bold">End Price</label>
+                                <label class="form-label form-label-custom">End Price</label>
                                 <div class="input-group">
-                                    <span class="input-group-text border-end-0 bg-white">$</span>
-                                    <input type="number" step="0.01" name="end_prices[]" class="form-control border-start-0 ps-0 bg-white" value="0.00" required>
+                                    <span class="input-group-text input-group-text-custom">$</span>
+                                    <input type="number" step="0.01" name="end_prices[]" class="form-control custom-input border-start-0 ps-0" value="0.00" required>
                                 </div>
                             </div>
                             <div class="col-md-2">
-                                <button type="button" class="btn btn-light text-danger border w-100" onclick="this.closest('.charger-row').remove()">
-                                    <i data-lucide="trash-2" class="w-5 h-5 mx-auto"></i>
+                                <button type="button" class="btn btn-light text-danger border custom-input w-100 d-flex justify-content-center align-items-center bg-white shadow-sm" onclick="this.closest('.charger-row').remove()" style="height: 46px;">
+                                    <i data-lucide="trash-2" class="w-5 h-5"></i>
                                 </button>
                             </div>
                         </div>
@@ -169,36 +350,47 @@
             </div>
         </div>
 
-        <div class="card shadow-sm mb-4">
+        <!-- Section 4: Amenities -->
+        <div class="card premium-card rounded-4 mb-4">
             <div class="card-body p-4 p-md-5">
-                <h5 class="fw-bold mb-4 d-flex align-items-center gap-2">
-                    <i data-lucide="coffee" class="text-warning"></i> Station Amenities
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-3">
+                    <span class="icon-box icon-box-warning">
+                        <i data-lucide="coffee" class="w-5 h-5"></i>
+                    </span>
+                    Station Amenities
                 </h5>
                 <div class="row g-3">
                     {% for amenity in amenities %}
-                    <div class="col-6 col-md-4">
-                        <div class="form-check p-2 border rounded-3 bg-white h-100 shadow-sm">
-                            <input class="form-check-input ms-2" type="checkbox" name="amenities" value="{{ amenity.id }}" id="am_{{ amenity.id }}"
-                            {% if amenity.id in selected_amenities %}checked{% endif %}>
-                            <label class="form-check-label d-flex align-items-center gap-2 small ms-2 fw-medium" for="am_{{ amenity.id }}">
-                                <i data-lucide="check-circle" class="w-4 h-4 text-emerald"></i> {{ amenity.name }}
+                    <div class="col-sm-6 col-md-4 col-lg-3">
+                        <div class="amenity-item h-100">
+                            <input class="amenity-checkbox" type="checkbox" name="amenities"
+                                value="{{ amenity.id }}" id="am_{{ amenity.id }}"
+                                {% if amenity.id in selected_amenities %}checked{% endif %}>
+                            <label class="amenity-label w-100 shadow-sm m-0" for="am_{{ amenity.id }}">
+                                <i data-lucide="check-circle-2" class="w-5 h-5 check-icon"></i>
+                                {{ amenity.name }}
                             </label>
                         </div>
                     </div>
                     {% empty %}
-                    <div class="col-12 text-muted small">No amenities available in the system yet.</div>
+                    <div class="col-12 text-muted small p-3 bg-light rounded-3 border">
+                        No amenities available in the system yet.
+                    </div>
                     {% endfor %}
                 </div>
             </div>
         </div>
 
-        <div class="d-flex justify-content-end gap-3 mb-5">
-            <a href="{% url 'admin-cs-stations' %}" class="btn btn-light px-4 py-3 fw-bold border shadow-sm">Cancel</a>
-            <button type="submit" class="btn btn-emerald px-5 py-3 fw-bold shadow">
+        <!-- Actions -->
+        <div class="d-flex flex-column flex-sm-row gap-3 pb-5 mt-5">
+            <a href="{% url 'admin-cs-stations' %}" class="btn btn-light px-5 py-3 fw-bold border rounded-3 text-secondary shadow-sm" style="min-width: 150px;">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-emerald flex-grow-1 py-3 fw-bold rounded-3 shadow-sm d-flex justify-content-center align-items-center gap-2">
                 {% if is_edit %}
-                <i data-lucide="save" class="w-5 h-5 d-inline me-2"></i> Save Changes
+                <i data-lucide="save" class="w-5 h-5"></i> Save Changes
                 {% else %}
-                <i data-lucide="plus" class="w-5 h-5 d-inline me-2"></i> Create Station
+                <i data-lucide="plus" class="w-5 h-5"></i> Create Station
                 {% endif %}
             </button>
         </div>
@@ -239,8 +431,59 @@
         document.getElementById('mapLng').value = lng.toFixed(6);
     }
 
+    function searchLocation() {
+        const searchInput = document.getElementById('locationSearch');
+        const searchBtn = document.getElementById('searchLocationBtn');
+        const query = searchInput.value.trim();
+        
+        if (!query) return;
+
+        const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query);
+        searchBtn.disabled = true;
+        searchBtn.textContent = 'Searching...';
+
+        fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'EVStationsLocator-Admin/1.0'
+            }
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const { lat, lon } = data[0];
+                    setMapMarker(parseFloat(lat), parseFloat(lon));
+                    map.setView([parseFloat(lat), parseFloat(lon)], 15);
+                } else {
+                    alert('Location not found. Try a different search.');
+                }
+            })
+            .catch(() => alert('Search failed. Please try again.'))
+            .finally(() => {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Find on Map';
+            });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         initMap();
+        
+        // Add search functionality
+        const searchBtn = document.getElementById('searchLocationBtn');
+        const searchInput = document.getElementById('locationSearch');
+        
+        if (searchBtn) {
+            searchBtn.addEventListener('click', searchLocation);
+        }
+        
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchLocation();
+                }
+            });
+        }
     });
 
     const chargerOptionsHTML = `
@@ -253,31 +496,31 @@
     function addChargerRow() {
         const container = document.getElementById('charger-rows-container');
         const row = document.createElement('div');
-        row.className = 'row g-3 mb-3 border-bottom pb-3 charger-row align-items-end';
+        row.className = 'row g-4 mb-4 border-bottom pb-4 charger-row align-items-end';
         row.innerHTML = `
             <div class="col-md-4">
-                <label class="form-label text-secondary small fw-bold">Charger Type</label>
-                <select name="charger_types[]" class="form-select bg-light" required>
+                <label class="form-label form-label-custom">Charger Type</label>
+                <select name="charger_types[]" class="form-select custom-input" required>
                     ${chargerOptionsHTML}
                 </select>
             </div>
             <div class="col-md-3">
-                <label class="form-label text-secondary small fw-bold">Start Price</label>
+                <label class="form-label form-label-custom">Start Price</label>
                 <div class="input-group">
-                    <span class="input-group-text border-end-0 bg-white">$</span>
-                    <input type="number" step="0.01" name="start_prices[]" class="form-control border-start-0 ps-0 bg-white" value="0.00" required>
+                    <span class="input-group-text input-group-text-custom">$</span>
+                    <input type="number" step="0.01" name="start_prices[]" class="form-control custom-input border-start-0 ps-0" value="0.00" required>
                 </div>
             </div>
             <div class="col-md-3">
-                <label class="form-label text-secondary small fw-bold">End Price</label>
+                <label class="form-label form-label-custom">End Price</label>
                 <div class="input-group">
-                    <span class="input-group-text border-end-0 bg-white">$</span>
-                    <input type="number" step="0.01" name="end_prices[]" class="form-control border-start-0 ps-0 bg-white" value="0.00" required>
+                    <span class="input-group-text input-group-text-custom">$</span>
+                    <input type="number" step="0.01" name="end_prices[]" class="form-control custom-input border-start-0 ps-0" value="0.00" required>
                 </div>
             </div>
             <div class="col-md-2">
-                <button type="button" class="btn btn-light text-danger border w-100" onclick="this.closest('.charger-row').remove()">
-                    <i data-lucide="trash-2" class="w-5 h-5 mx-auto"></i>
+                <button type="button" class="btn btn-light text-danger border custom-input w-100 d-flex justify-content-center align-items-center bg-white shadow-sm" onclick="this.closest('.charger-row').remove()" style="height: 46px;">
+                    <i data-lucide="trash-2" class="w-5 h-5"></i>
                 </button>
             </div>
         `;
