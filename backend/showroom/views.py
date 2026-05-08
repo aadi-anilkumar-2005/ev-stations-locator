@@ -1,6 +1,7 @@
 from django.shortcuts import redirect, render
 from django.views.generic import TemplateView, ListView, View
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth import get_user_model
 from django.db import transaction
 
 from stations.models import Showroom, Brand, Amenity, Address, ShowroomAmenity
@@ -353,3 +354,17 @@ class ShowroomAmenityDeleteView(ShowroomRoleRequiredMixin, View):
             qs = qs.filter(created_by=user)
         qs.delete()
         return redirect('admin-showroom-amenity-list')
+
+
+class ShowroomCustomerListView(ShowroomRoleRequiredMixin, ListView):
+    template_name = 'showroom/customers_list_page.html'
+    context_object_name = 'customers'
+
+    def get_queryset(self):
+        User = get_user_model()
+        return User.objects.select_related('profile').filter(role='customer').order_by('-date_joined')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['active_page'] = 'customers'
+        return context

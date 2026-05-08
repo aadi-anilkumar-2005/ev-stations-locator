@@ -25,4 +25,5 @@ urlpatterns = [
 
     # Bookings
     path('bookings/', views.CSBookingListView.as_view(), name='admin-cs-bookings'),
+    path('customers/', views.CSCustomerListView.as_view(), name='admin-cs-customers'),
 ]

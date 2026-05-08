@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.views.generic import TemplateView, ListView, CreateView, UpdateView, DeleteView, View
 from django.urls import reverse_lazy
 from django.db import transaction
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.db.models import Count
 
@@ -262,3 +263,17 @@ class ServiceAmenityDeleteView(ServiceRoleRequiredMixin, View):
             qs = qs.filter(created_by=user)
         qs.delete()
         return redirect('service-amenities-list')
+
+
+class ServiceCustomerListView(ServiceRoleRequiredMixin, ListView):
+    template_name = 'service_center/customers_page.html'
+    context_object_name = 'customers'
+
+    def get_queryset(self):
+        User = get_user_model()
+        return User.objects.select_related('profile').filter(role='customer').order_by('-date_joined')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['active_page'] = 'customers'
+        return context

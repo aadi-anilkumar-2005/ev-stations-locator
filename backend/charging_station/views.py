@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic import TemplateView, ListView, View
 from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth import get_user_model
 from django.db import transaction
 
 from stations.models import Station, Address, Amenity, StationAmenity, ChargerType, StationCharger, Booking
@@ -366,4 +367,18 @@ class CSBookingListView(AdminRequiredMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['active_page'] = 'bookings'
+        return context
+
+
+class CSCustomerListView(AdminRequiredMixin, ListView):
+    template_name = 'charging_station/customers_list.html'
+    context_object_name = 'customers'
+
+    def get_queryset(self):
+        User = get_user_model()
+        return User.objects.select_related('profile').filter(role='customer').order_by('-date_joined')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['active_page'] = 'customers'
         return context

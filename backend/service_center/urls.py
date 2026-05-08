@@ -16,4 +16,5 @@ urlpatterns = [
     path('amenities/add/', views.ServiceAmenityCreateView.as_view(), name='service-amenity-add'),
     path('amenities/<int:pk>/edit/', views.ServiceAmenityUpdateView.as_view(), name='service-amenity-edit'),
     path('amenities/<int:pk>/delete/', views.ServiceAmenityDeleteView.as_view(), name='service-amenity-delete'),
+    path('customers/', views.ServiceCustomerListView.as_view(), name='service-customers-list'),
 ]

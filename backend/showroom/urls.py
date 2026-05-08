@@ -22,4 +22,5 @@ urlpatterns = [
     path('amenities/add/', views.ShowroomAmenityCreateView.as_view(), name='admin-showroom-amenity-add'),
     path('amenities/<int:pk>/edit/', views.ShowroomAmenityUpdateView.as_view(), name='admin-showroom-amenity-edit'),
     path('amenities/<int:pk>/delete/', views.ShowroomAmenityDeleteView.as_view(), name='admin-showroom-amenity-delete'),
+    path('customers/', views.ShowroomCustomerListView.as_view(), name='admin-showroom-customers'),
 ]
