@@ -1,0 +1,195 @@
+{% extends 'charging_station/base.html' %}
+
+{% block content %}
+<style>
+    /* Premium Design System */
+    .view-section {
+        background-color: #f4f6f8;
+        min-height: 100vh;
+        padding-top: 2rem;
+    }
+    
+    .premium-card {
+        background: #ffffff;
+        border: none;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    /* Buttons */
+    .btn-emerald {
+        background-color: #10b981;
+        border-color: #10b981;
+        color: white;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+    .btn-emerald:hover {
+        background-color: #059669;
+        border-color: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+        color: white;
+    }
+
+    /* Table Styles */
+    .table-custom {
+        margin-bottom: 0;
+    }
+    
+    .table-custom th {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6b7280;
+        background-color: transparent;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1.25rem 1.5rem;
+    }
+    
+    .table-custom td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+        transition: background-color 0.2s ease;
+    }
+    
+    .table-custom tbody tr:hover td {
+        background-color: #f9fafb;
+    }
+    
+    .table-custom tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Badges */
+    .badge-custom {
+        font-weight: 600;
+        padding: 0.5em 1em;
+        font-size: 0.75rem;
+        letter-spacing: 0.3px;
+    }
+
+    /* Action Buttons */
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: none;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-edit {
+        color: #3b82f6;
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    .btn-edit:hover {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: #2563eb;
+        transform: translateY(-2px);
+    }
+    
+    .btn-delete {
+        color: #ef4444;
+        background-color: rgba(239, 68, 68, 0.1);
+    }
+    .btn-delete:hover {
+        background-color: rgba(239, 68, 68, 0.2);
+        color: #dc2626;
+        transform: translateY(-2px);
+    }
+
+    /* Empty State */
+    .empty-state-icon {
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f3f4f6;
+        border-radius: 50%;
+        margin: 0 auto 1.5rem;
+        color: #9ca3af;
+    }
+</style>
+
+<div class="view-section px-3 px-md-4">
+    <div class="container-fluid mx-auto" style="max-width: 900px;">
+        
+        <!-- Header -->
+        <header class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-5">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">Facility Amenities</h3>
+                <p class="text-secondary mb-0">Manage the features your stations provide to customers.</p>
+            </div>
+            <a href="{% url 'admin-cs-amenity-add' %}" class="btn btn-emerald rounded-3 px-4 py-2 shadow-sm d-flex align-items-center gap-2">
+                <i data-lucide="plus" class="w-5 h-5"></i> Add Amenity
+            </a>
+        </header>
+
+        <!-- Table Card -->
+        <div class="card premium-card">
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Amenity Name</th>
+                            <th>Category</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for amenity in amenities %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-dark fs-6 d-flex align-items-center gap-2">
+                                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald"></i>
+                                    {{ amenity.name }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-custom bg-light text-secondary border rounded-pill d-inline-flex align-items-center gap-1">
+                                    <i data-lucide="tag" class="w-3 h-3"></i>
+                                    Station Feature
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{% url 'admin-cs-amenity-edit' amenity.id %}" class="btn-action btn-edit" title="Edit Amenity">
+                                        <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                    </a>
+                                    <form action="{% url 'admin-cs-amenity-delete' amenity.id %}" method="POST" class="m-0 p-0" onsubmit="return confirm('Delete this amenity? It will be unlinked from all stations.');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-action btn-delete" title="Delete Amenity">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center py-5">
+                                <div class="empty-state-icon">
+                                    <i data-lucide="coffee" class="w-8 h-8"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">No Amenities Recorded</h5>
+                                <p class="text-secondary mb-4">You haven't added any station features to the system yet.</p>
+                                <a href="{% url 'admin-cs-amenity-add' %}" class="btn btn-emerald rounded-3 px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2">
+                                    <i data-lucide="plus" class="w-5 h-5"></i> Add First Amenity
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

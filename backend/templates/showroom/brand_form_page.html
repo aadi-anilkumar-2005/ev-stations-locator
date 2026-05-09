@@ -1,0 +1,129 @@
+{% extends 'showroom/base.html' %}
+
+{% block content %}
+<style>
+    /* Premium Form Styles */
+    .view-section {
+        background-color: #fcfcfc;
+        min-height: 100vh;
+        padding-top: 2rem;
+    }
+    
+    .premium-card {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 24px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .premium-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+    }
+
+    .form-label-custom {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6b7280;
+        margin-bottom: 0.5rem;
+    }
+
+    .custom-input {
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.6rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        color: #374151;
+        transition: all 0.2s ease;
+    }
+
+    .custom-input:focus {
+        background-color: #ffffff;
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+        outline: none;
+    }
+
+    /* Icon Wrappers */
+    .icon-box {
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+    .icon-box-primary { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+
+    /* Buttons */
+    .btn-emerald {
+        background-color: #10b981;
+        border-color: #10b981;
+        color: white;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+    .btn-emerald:hover {
+        background-color: #059669;
+        border-color: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+        color: white;
+    }
+    
+    .btn-back {
+        transition: all 0.2s ease;
+        background: #ffffff;
+    }
+    .btn-back:hover {
+        background: #f3f4f6;
+        transform: translateX(-2px);
+    }
+</style>
+
+<div class="view-section px-3">
+    <!-- Page Header -->
+    <header class="d-flex align-items-center gap-3 mb-5 mx-auto" style="max-width: 600px;">
+        <a href="{% url 'admin-showroom-brand-list' %}" class="btn btn-back rounded-circle p-2 shadow-sm border text-secondary">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
+        <div>
+            <h3 class="fw-bold mb-1 text-dark">{% if brand %}Edit Brand{% else %}Add Brand{% endif %}</h3>
+            <p class="text-secondary mb-0">Create or update a vehicle manufacturer brand.</p>
+        </div>
+    </header>
+
+    <form method="post" class="mx-auto" style="max-width: 600px;" novalidate>
+        {% csrf_token %}
+        
+        <!-- Brand Details Card -->
+        <div class="card premium-card rounded-4 mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-3">
+                    <span class="icon-box icon-box-primary">
+                        <i data-lucide="award" class="w-5 h-5"></i>
+                    </span>
+                    Brand Information
+                </h5>
+                <div class="mb-2">
+                    <label class="form-label form-label-custom">Brand Name</label>
+                    <input type="text" name="name" class="form-control custom-input" placeholder="e.g. Tesla, Rivian, Ford" value="{{ brand.name|default:'' }}" required>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="d-flex flex-column flex-sm-row gap-3 mt-4">
+            <a href="{% url 'admin-showroom-brand-list' %}" class="btn btn-light px-5 py-3 fw-bold border rounded-3 text-secondary shadow-sm text-center" style="min-width: 150px;">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-emerald flex-grow-1 py-3 fw-bold rounded-3 shadow-sm d-flex justify-content-center align-items-center gap-2">
+                <i data-lucide="save" class="w-5 h-5"></i>
+                {% if brand %}Save Changes{% else %}Create Brand{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

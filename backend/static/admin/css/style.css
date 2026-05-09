@@ -1,0 +1,61 @@
+:root {
+    --bs-primary: #059669; /* Emerald 600 */
+    --bs-primary-rgb: 5, 150, 105;
+}
+
+.bg-emerald { background-color: #059669 !important; }
+.text-emerald { color: #059669 !important; }
+.border-emerald { border-color: #059669 !important; }
+.bg-dark-gradient { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); }
+
+.btn-emerald {
+    background-color: #059669;
+    border-color: #059669;
+    color: white;
+    transition: all 0.3s;
+}
+
+.btn-emerald:hover {
+    background-color: #047857;
+    border-color: #047857;
+    color: white;
+}
+
+aside {
+    width: 260px;
+}
+
+.active-nav-link {
+    background-color: #059669 !important;
+    color: white !important;
+}
+
+.nav-link:hover:not(.active-nav-link) {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white !important;
+}
+
+.hover-danger:hover {
+    color: #dc3545 !important;
+    background-color: rgba(220, 53, 69, 0.1);
+    border-radius: 0.5rem;
+}
+
+.xs-text { font-size: 0.75rem; }
+
+.badge-emerald { background-color: #ecfdf5; color: #059669; }
+.badge-blue { background-color: #eff6ff; color: #2563eb; }
+.badge-orange { background-color: #fff7ed; color: #ea580c; }
+.badge-red { background-color: #fef2f2; color: #dc2626; }
+.badge-purple { background-color: #f3e8ff; color: #7c3aed; }
+
+.border-bottom-emerald {
+    border-bottom: 2px solid #059669 !important;
+}
+
+.transition-hover {
+    transition: transform 0.2s;
+}
+.transition-hover:hover {
+    transform: translateY(-5px);
+}

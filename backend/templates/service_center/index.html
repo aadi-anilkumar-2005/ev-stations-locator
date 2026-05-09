@@ -1,0 +1,22 @@
+{% extends 'service_center/base.html' %}
+
+{% block content %}
+    <!-- 1. Dashboard View -->
+    {% include 'service_center/partials/dashboard.html' %}
+
+    <!-- 3. Locations View -->
+    {% include 'service_center/partials/locations_list.html' %}
+
+    <!-- 4. Location Form View -->
+    {% include 'service_center/partials/location_form.html' %}
+
+    <!-- 5. Amenities List View -->
+    {% include 'service_center/partials/amenities_list.html' %}
+
+    <!-- 6. Amenity Form View -->
+    {% include 'service_center/partials/amenity_form.html' %}
+{% endblock %}
+
+{% block extra_js %}
+    {% include 'service_center/partials/scripts.html' %}
+{% endblock %}

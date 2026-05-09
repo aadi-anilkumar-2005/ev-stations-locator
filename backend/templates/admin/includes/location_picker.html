@@ -1,0 +1,29 @@
+{% comment %}
+Location picker using OpenStreetMap (Leaflet).
+Usage: {% include 'admin/includes/location_picker.html' with latitude=object.address.latitude|default:'' longitude=object.address.longitude|default:'' %}
+Adapt the latitude/longitude variables for your context (object, showroom, station, etc.)
+{% endcomment %}
+<div class="col-12">
+    <label class="form-label fw-bold small text-muted text-uppercase d-block">Map Location</label>
+    <div class="location-picker border p-3" style="border-radius: 12px; background: #f8fafc;">
+        <div class="row g-2 align-items-stretch mb-3">
+            <div class="col-md-9">
+                <input type="text" class="form-control" id="locationSearch" placeholder="Search location (e.g. Kerala, India)" style="border-radius: 10px;">
+            </div>
+            <div class="col-md-3 d-grid">
+                <button type="button" class="btn btn-primary" id="searchLocationBtn" style="border-radius: 10px; background: #3b82f6;">Search</button>
+            </div>
+        </div>
+        <div id="locationMap" class="rounded border" style="height: 320px;"></div>
+        <div class="mt-2 small text-muted" id="mapHint">Click on the map to set location, then drag marker to fine-tune.</div>
+        <div class="mt-3">
+            <label class="form-label mb-1 small fw-bold">Selected Coordinates</label>
+            <div class="row g-2">
+                <div class="col-md-6"><input type="text" class="form-control form-control-sm" id="latitudeDisplay" readonly style="background: #f1f5f9;"></div>
+                <div class="col-md-6"><input type="text" class="form-control form-control-sm" id="longitudeDisplay" readonly style="background: #f1f5f9;"></div>
+            </div>
+        </div>
+        <input type="hidden" name="latitude" id="latitude" value="{{ latitude|default:'' }}">
+        <input type="hidden" name="longitude" id="longitude" value="{{ longitude|default:'' }}">
+    </div>
+</div>

@@ -1,0 +1,47 @@
+<div class="view-section">
+    <!-- Page Header -->
+    <header class="d-flex align-items-center gap-3 mb-4">
+        <a href="{% url 'service-amenities-list' %}" class="btn btn-light rounded-circle p-2 shadow-sm border">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
+        <div>
+            <h4 class="fw-bold mb-0">{% if is_edit %}Edit{% else %}Add{% endif %} Amenity</h4>
+            <p class="text-muted mb-0 small">{% if is_edit %}Update existing{% else %}Create new{% endif %} amenity</p>
+        </div>
+    </header>
+
+    <form class="mx-auto" style="max-width: 600px;" method="post" novalidate>
+        {% csrf_token %}
+
+        {% if error %}
+        <div class="alert alert-danger rounded-3 mb-4">{{ error }}</div>
+        {% endif %}
+
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <!-- Amenity Name only -->
+                <div class="mb-3">
+                    <label class="form-label text-secondary fw-medium">Amenity Name</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white text-muted">
+                            <i data-lucide="tag" class="w-4 h-4"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" name="name"
+                            placeholder="e.g. Free WiFi, EV Charging Lounge"
+                            value="{{ amenity.name|default:'' }}" required>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex gap-3 pb-5">
+            <a href="{% url 'service-amenities-list' %}" class="btn btn-light flex-grow-1 py-3 fw-bold border">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-emerald text-white flex-grow-1 py-3 fw-bold">
+                {% if is_edit %}Update Amenity{% else %}Create Amenity{% endif %}
+            </button>
+        </div>
+    </form>
+</div>

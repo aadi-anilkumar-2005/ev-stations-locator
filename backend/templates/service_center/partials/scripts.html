@@ -1,0 +1,125 @@
+{% load static %}
+<script>
+    // --- Initialization ---
+    document.addEventListener('DOMContentLoaded', () => {
+        lucide.createIcons();
+        updateDashboardGreeting();
+        
+        // Initialize map if on location form page
+        if (document.getElementById('map')) {
+            initServiceCenterMap();
+        }
+    });
+
+    // --- Sidebar Toggle Logic ---
+    function toggleSidebar() {
+        document.getElementById('sidebar-container').classList.toggle('collapsed');
+    }
+
+    // --- Notifications ---
+    function showToast(message, type = 'success') {
+        const toastEl = document.getElementById('actionToast');
+        const toastBody = document.getElementById('toastMessage');
+        if (!toastEl || !toastBody) return;
+        let bgClass = type === 'success' ? 'bg-success' : (type === 'danger' ? 'bg-danger' : 'bg-primary');
+        toastEl.className = `toast align-items-center text-white border-0 shadow-lg ${bgClass}`;
+        let icon = type === 'success' ? 'check-circle' : 'info';
+        toastBody.innerHTML = `<i data-lucide="${icon}" class="w-5 h-5"></i> ${message}`;
+        lucide.createIcons();
+        const toast = new bootstrap.Toast(toastEl, { delay: 3000 });
+        toast.show();
+    }
+
+    function updateDashboardGreeting() {
+        const greetingEl = document.getElementById('dash-greeting');
+        if (greetingEl) {
+            const hour = new Date().getHours();
+            let greeting = hour < 12 ? 'Good Morning' : (hour < 18 ? 'Good Afternoon' : 'Good Evening');
+            greetingEl.textContent = `${greeting}, Partner!`;
+        }
+    }
+
+    // --- Service Center Map Functionality ---
+    let serviceMap = null;
+    let serviceMapMarker = null;
+
+    function initServiceCenterMap() {
+        const latInput = document.getElementById('mapLat');
+        const lngInput = document.getElementById('mapLng');
+        
+        let initLat = latInput.value ? parseFloat(latInput.value) : 10.8505;
+        let initLng = lngInput.value ? parseFloat(lngInput.value) : 76.2711;
+
+        serviceMap = L.map('map').setView([initLat, initLng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19, attribution: '© OpenStreetMap'
+        }).addTo(serviceMap);
+
+        if (latInput.value && lngInput.value) {
+            setServiceMapMarker(initLat, initLng);
+        }
+
+        serviceMap.on('click', function(e) {
+            setServiceMapMarker(e.latlng.lat, e.latlng.lng);
+        });
+
+        // Add search functionality
+        const searchBtn = document.getElementById('searchLocationBtn');
+        const searchInput = document.getElementById('locationSearch');
+        
+        if (searchBtn) {
+            searchBtn.addEventListener('click', searchServiceLocation);
+        }
+        
+        if (searchInput) {
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    searchServiceLocation();
+                }
+            });
+        }
+    }
+
+    function setServiceMapMarker(lat, lng) {
+        if (serviceMapMarker) serviceMap.removeLayer(serviceMapMarker);
+        serviceMapMarker = L.marker([lat, lng]).addTo(serviceMap);
+        document.getElementById('mapLat').value = lat.toFixed(6);
+        document.getElementById('mapLng').value = lng.toFixed(6);
+    }
+
+    function searchServiceLocation() {
+        const searchInput = document.getElementById('locationSearch');
+        const searchBtn = document.getElementById('searchLocationBtn');
+        const query = searchInput.value.trim();
+        
+        if (!query) return;
+
+        const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query);
+        searchBtn.disabled = true;
+        searchBtn.textContent = 'Searching...';
+
+        fetch(url, {
+            headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'EVStationsLocator-Admin/1.0'
+            }
+        })
+            .then(r => r.json())
+            .then(data => {
+                if (data && data.length > 0) {
+                    const { lat, lon } = data[0];
+                    setServiceMapMarker(parseFloat(lat), parseFloat(lon));
+                    serviceMap.setView([parseFloat(lat), parseFloat(lon)], 15);
+                } else {
+                    alert('Location not found. Try a different search.');
+                }
+            })
+            .catch(() => alert('Search failed. Please try again.'))
+            .finally(() => {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search';
+            });
+    }
+</script>
+

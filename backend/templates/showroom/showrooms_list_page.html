@@ -1,0 +1,220 @@
+{% extends 'showroom/base.html' %}
+
+{% block content %}
+<style>
+    /* Premium Design System */
+    .view-section {
+        background-color: #fcfcfc;
+        min-height: 100vh;
+        padding-top: 2rem;
+    }
+    
+    .premium-card {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 24px rgba(0,0,0,0.03);
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+
+    /* Buttons */
+    .btn-emerald {
+        background-color: #10b981;
+        border-color: #10b981;
+        color: white;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+    .btn-emerald:hover {
+        background-color: #059669;
+        border-color: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+        color: white;
+    }
+
+    /* Table Styles */
+    .table-custom {
+        margin-bottom: 0;
+    }
+    
+    .table-custom th {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6b7280;
+        background-color: #f9fafb;
+        border-bottom: 1px solid #e5e7eb;
+        padding: 1rem 1.5rem;
+    }
+    
+    .table-custom td {
+        padding: 1.25rem 1.5rem;
+        border-bottom: 1px solid #f3f4f6;
+        vertical-align: middle;
+        transition: background-color 0.2s ease;
+    }
+    
+    .table-custom tbody tr:hover td {
+        background-color: #f9fafb;
+    }
+    
+    .table-custom tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* Badges */
+    .badge-custom {
+        font-weight: 600;
+        padding: 0.5em 1em;
+        font-size: 0.75rem;
+        letter-spacing: 0.3px;
+    }
+
+    /* Action Buttons */
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: none;
+        transition: all 0.2s ease;
+    }
+    
+    .btn-edit {
+        color: #3b82f6;
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+    .btn-edit:hover {
+        background-color: rgba(59, 130, 246, 0.2);
+        color: #2563eb;
+        transform: translateY(-2px);
+    }
+    
+    .btn-delete {
+        color: #ef4444;
+        background-color: rgba(239, 68, 68, 0.1);
+    }
+    .btn-delete:hover {
+        background-color: rgba(239, 68, 68, 0.2);
+        color: #dc2626;
+        transform: translateY(-2px);
+    }
+
+    /* Empty State */
+    .empty-state-icon {
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #f3f4f6;
+        border-radius: 50%;
+        margin: 0 auto 1.5rem;
+        color: #9ca3af;
+    }
+</style>
+
+<div class="view-section px-3 px-md-4">
+    <div class="container-fluid max-w-7xl mx-auto" style="max-width: 1200px;">
+        <!-- Header -->
+        <header class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-5">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">Vehicle Showrooms</h3>
+                <p class="text-secondary mb-0">Manage your network of partner showrooms and galleries.</p>
+            </div>
+            <a href="{% url 'admin-showroom-add' %}" class="btn btn-emerald rounded-3 px-4 py-2 shadow-sm d-flex align-items-center gap-2">
+                <i data-lucide="plus" class="w-5 h-5"></i>
+                Add Showroom
+            </a>
+        </header>
+
+        <!-- Table Card -->
+        <div class="card premium-card">
+            <div class="table-responsive">
+                <table class="table table-custom align-middle">
+                    <thead>
+                        <tr>
+                            <th>Showroom Details</th>
+                            <th>Brand</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for showroom in showrooms %}
+                        <tr>
+                            <td>
+                                <div class="fw-bold text-dark fs-6">{{ showroom.name }}</div>
+                                <div class="text-secondary small d-flex align-items-center gap-1 mt-1">
+                                    <i data-lucide="phone" class="w-4 h-4 text-muted"></i> 
+                                    {{ showroom.phone|default:'No phone provided' }}
+                                </div>
+                            </td>
+                            <td>
+                                <span class="badge badge-custom bg-light text-dark border">
+                                    {{ showroom.brand.name|default:'No Brand' }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if showroom.address %}
+                                <div class="fw-medium text-dark">{{ showroom.address.city }}</div>
+                                <div class="text-secondary small">{{ showroom.address.state }}</div>
+                                {% else %}
+                                <div class="fw-medium text-muted fst-italic">No Location</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if showroom.status == 'active' %}
+                                    <span class="badge badge-custom bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill d-inline-flex align-items-center gap-1">
+                                        <i data-lucide="check-circle" class="w-3 h-3"></i> Active & Open
+                                    </span>
+                                {% elif showroom.status == 'renovation' %}
+                                    <span class="badge badge-custom bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25 rounded-pill d-inline-flex align-items-center gap-1">
+                                        <i data-lucide="tool" class="w-3 h-3"></i> Renovation
+                                    </span>
+                                {% else %}
+                                    <span class="badge badge-custom bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 rounded-pill d-inline-flex align-items-center gap-1">
+                                        <i data-lucide="x-circle" class="w-3 h-3"></i> Closed
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a href="{% url 'admin-showroom-edit' showroom.showroom_id %}" class="btn-action btn-edit" title="Edit Showroom">
+                                        <i data-lucide="edit-2" class="w-4 h-4"></i>
+                                    </a>
+                                    <form method="post" action="{% url 'admin-showroom-delete' showroom.showroom_id %}" class="m-0 p-0" onsubmit="return confirm('Are you sure you want to remove this showroom?');">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-action btn-delete" title="Delete Showroom">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <div class="empty-state-icon">
+                                    <i data-lucide="store" class="w-8 h-8"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-2">No Showrooms Found</h5>
+                                <p class="text-secondary mb-4">You haven't added any partner showrooms to your network yet.</p>
+                                <a href="{% url 'admin-showroom-add' %}" class="btn btn-emerald rounded-3 px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2">
+                                    <i data-lucide="plus" class="w-5 h-5"></i> Add First Showroom
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

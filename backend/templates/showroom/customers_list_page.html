@@ -1,0 +1,52 @@
+{% extends 'showroom/base.html' %}
+
+{% block content %}
+<div class="view-section px-3 px-md-4">
+    <div class="container-fluid mx-auto" style="max-width: 1200px;">
+        <header class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">Customers</h3>
+                <p class="text-secondary mb-0">View customers connected to your showrooms.</p>
+            </div>
+            <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
+                Total: {{ customers|length }}
+            </span>
+        </header>
+
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="px-4 py-3 text-secondary small text-uppercase">Customer</th>
+                            <th class="py-3 text-secondary small text-uppercase">Email</th>
+                            <th class="py-3 text-secondary small text-uppercase">Phone</th>
+                            <th class="pe-4 py-3 text-secondary small text-uppercase text-end">Joined</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for customer in customers %}
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="fw-semibold text-dark">{{ customer.full_name|default:customer.username }}</div>
+                                <div class="text-muted small">@{{ customer.username }}</div>
+                            </td>
+                            <td class="py-3">{{ customer.email|default:'-' }}</td>
+                            <td class="py-3">{{ customer.profile.phone_number|default:'-' }}</td>
+                            <td class="pe-4 py-3 text-end text-muted">{{ customer.date_joined|date:"d M Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i data-lucide="users" class="w-8 h-8 d-block mx-auto mb-2 opacity-50"></i>
+                                No customers found yet.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

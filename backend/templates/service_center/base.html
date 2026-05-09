@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ChargePoint - Service Center Portal{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    {% include 'service_center/partials/css.html' %}
+</head>
+
+<body>
+    <div class="d-flex h-100">
+        <!-- Sidebar -->
+        {% include 'service_center/partials/sidebar.html' %}
+
+        <!-- Main Content -->
+        <main class="flex-grow-1 overflow-auto vh-100 bg-light position-relative">
+            
+            <!-- Universal Header (Mobile & Desktop) -->
+            {% include 'service_center/partials/header.html' %}
+
+            <div class="p-4 p-md-5">
+                {% block content %}
+                {% endblock %}
+            </div>
+        </main>
+    </div>
+
+    <!-- Mobile Sidebar Offcanvas -->
+    {% include 'service_center/partials/mobile_menu.html' %}
+
+    <!-- Toast Notification System -->
+    {% include 'service_center/partials/toast.html' %}
+
+    <!-- Logout Full Screen overlay -->
+    {% include 'service_center/partials/logout_screen.html' %}
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    {% block extra_js %}
+    {% endblock %}
+</body>
+</html>

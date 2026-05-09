@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ station.name }} - ChargePoint Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'admin/css/style.css' %}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body class="bg-light">
+    <div class="d-flex">
+        <div id="sidebar-container">
+            {% include 'admin/includes/sidebar.html' %}
+        </div>
+        <main class="flex-grow-1 overflow-auto vh-100">
+            <header class="bg-white border-bottom px-4 py-3 sticky-top">
+                <div class="d-flex align-items-center gap-3">
+                    <a href="{% url 'admin-stations' %}" class="btn btn-light rounded-circle p-2">
+                        <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                    </a>
+                    <div>
+                        <h4 class="fw-bold mb-0">{{ station.name }}</h4>
+                        <p class="text-muted mb-0 small">Station Details</p>
+                    </div>
+                </div>
+            </header>
+            <div class="p-4">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-5">
+                        <div class="row mb-5">
+                            <div class="col-md-6">
+                                <h5 class="fw-bold text-secondary mb-3">General Information</h5>
+                                <p><strong>Operator:</strong> {{ station.operator_name }}</p>
+                                <p><strong>Status:</strong> <span
+                                        class="badge rounded-pill {% if station.status == 'active' %}bg-emerald-subtle text-emerald{% elif station.status == 'maintenance' %}bg-warning-subtle text-warning{% else %}bg-secondary-subtle text-secondary{% endif %} text-uppercase">{{ station.status }}</span></p>
+                                <p><strong>Opening Hours:</strong> {{ station.opening_hours|default:"N/A" }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="fw-bold text-secondary mb-3">Location</h5>
+                                <p class="mb-0">{{ station.address.street }}</p>
+                                <p class="mb-0">{{ station.address.city }}, {{ station.address.state }} {{ station.address.zip_code }}</p>
+                                <div class="mt-2 text-muted small">Lat: {{ station.address.latitude }}, Long: {{ station.address.longitude }}</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-5">
+                            <h5 class="fw-bold text-secondary mb-3">Chargers</h5>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead class="bg-light">
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Connector</th>
+                                            <th>Max Power</th>
+                                            <th>Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for charger in station.station_chargers.all %}
+                                        <tr>
+                                            <td>{{ charger.charger_type.name }}</td>
+                                            <td>{{ charger.charger_type.connector_type }}</td>
+                                            <td>{{ charger.charger_type.max_power_kw }} kW</td>
+                                            <td>₹{{ charger.start_price }} - ₹{{ charger.end_price }}</td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="4">No chargers listed.</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h5 class="fw-bold text-secondary mb-3">Amenities</h5>
+                            <div class="d-flex gap-2flex-wrap">
+                                {% for sa in station.station_amenities.all %}
+                                <span class="badge bg-light text-dark border">{{ sa.amenity.name }}</span>
+                                {% empty %}
+                                <p class="text-muted">No amenities listed.</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white p-4 d-flex justify-content-end gap-2">
+                        <a href="{% url 'admin-cs-station-edit' station.station_id %}"
+                            class="btn btn-emerald text-white fw-bold">Edit Station</a>
+                        <a href="{% url 'admin-station-delete' station.pk %}"
+                            class="btn btn-outline-danger fw-bold">Delete</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>

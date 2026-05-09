@@ -1,0 +1,380 @@
+<style>
+    /* Premium Form Styles */
+    .view-section {
+        background-color: #fcfcfc;
+        min-height: 100vh;
+        padding-top: 2rem;
+    }
+    
+    .premium-card {
+        background: #ffffff;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 24px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .premium-card:hover {
+        box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+    }
+
+    .form-label-custom {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6b7280;
+        margin-bottom: 0.5rem;
+    }
+
+    .custom-input {
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.6rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        color: #374151;
+        transition: all 0.2s ease;
+    }
+
+    .custom-input:focus {
+        background-color: #ffffff;
+        border-color: #10b981;
+        box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+        outline: none;
+    }
+
+    .input-group-text-custom {
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-right: none;
+        border-radius: 0.6rem 0 0 0.6rem;
+        color: #9ca3af;
+    }
+
+    .custom-input.border-start-0 {
+        border-left-color: transparent;
+    }
+    
+    .custom-input.border-start-0:focus {
+        border-left-color: #10b981;
+    }
+
+    /* Icon Wrappers for Section Headers */
+    .icon-box {
+        width: 42px;
+        height: 42px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+    .icon-box-primary { background-color: rgba(13, 110, 253, 0.1); color: #0d6efd; }
+    .icon-box-success { background-color: rgba(25, 135, 84, 0.1); color: #198754; }
+    .icon-box-danger { background-color: rgba(220, 53, 69, 0.1); color: #dc3545; }
+    .icon-box-warning { background-color: rgba(255, 193, 7, 0.15); color: #d39e00; }
+
+    /* Buttons */
+    .btn-emerald {
+        background-color: #10b981;
+        border-color: #10b981;
+        color: white;
+        transition: all 0.3s ease;
+    }
+    .btn-emerald:hover {
+        background-color: #059669;
+        border-color: #059669;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(16, 185, 129, 0.25);
+        color: white;
+    }
+    
+    .btn-back {
+        transition: all 0.2s ease;
+        background: #ffffff;
+    }
+    .btn-back:hover {
+        background: #f3f4f6;
+        transform: translateX(-2px);
+    }
+
+    /* Custom Amenities Checkboxes */
+    .amenity-checkbox {
+        display: none;
+    }
+    .amenity-label {
+        display: flex;
+        align-items: center;
+        padding: 0.85rem 1.25rem;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #ffffff;
+        color: #4b5563;
+        font-weight: 500;
+        height: 100%;
+    }
+    .amenity-label:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+    }
+    .amenity-checkbox:checked + .amenity-label {
+        background-color: rgba(16, 185, 129, 0.05);
+        border-color: #10b981;
+        color: #059669;
+        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.1);
+    }
+    .amenity-checkbox:checked + .amenity-label .check-icon {
+        opacity: 1;
+        transform: scale(1);
+    }
+    .check-icon {
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        margin-right: 8px;
+        color: #10b981;
+    }
+
+    /* Custom Switch */
+    .form-switch .form-check-input {
+        height: 1.5rem;
+        width: 2.75rem;
+        cursor: pointer;
+    }
+    .form-switch .form-check-input:checked {
+        background-color: #10b981;
+        border-color: #10b981;
+    }
+    .switch-wrapper {
+        background: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 0.6rem;
+        padding: 0.65rem 1rem;
+    }
+</style>
+
+<div class="view-section px-3">
+    <!-- Page Header -->
+    <header class="d-flex align-items-center gap-3 mb-5 mx-auto" style="max-width: 900px;">
+        <a href="{% url 'service-locations-list' %}" class="btn btn-back rounded-circle p-2 shadow-sm border text-secondary">
+            <i data-lucide="chevron-left" class="w-5 h-5"></i>
+        </a>
+        <div>
+            <h3 class="fw-bold mb-1 text-dark">{% if is_edit %}Edit{% else %}Add New{% endif %} Service Center</h3>
+            <p class="text-secondary mb-0">{% if is_edit %}Update the details of your{% else %}Register a new{% endif %} service center location.</p>
+        </div>
+    </header>
+
+    <form method="post" class="mx-auto" style="max-width: 900px;" novalidate>
+        {% csrf_token %}
+
+        {% if error %}
+        <div class="alert alert-danger rounded-3 mb-4 shadow-sm border-0 d-flex align-items-center gap-2">
+            <i data-lucide="alert-circle" class="w-5 h-5"></i>
+            {{ error }}
+        </div>
+        {% endif %}
+
+        <!-- Section 1: Service Center Details -->
+        <div class="card premium-card rounded-4 mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-3">
+                    <span class="icon-box icon-box-primary">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                    </span>
+                    Service Center Details
+                </h5>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label form-label-custom">Center Name</label>
+                        <input type="text" name="name" class="form-control custom-input"
+                            placeholder="e.g. ChargePoint Service - Bandra"
+                            value="{{ location.name|default:'' }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label form-label-custom">Status</label>
+                        <select name="status" class="form-select custom-input">
+                            <option value="active" {% if location.status == 'active' %}selected{% endif %}>🟢 Active & Operational</option>
+                            <option value="busy" {% if location.status == 'busy' %}selected{% endif %}>🟡 Currently Busy</option>
+                            <option value="closed" {% if location.status == 'closed' %}selected{% endif %}>🔴 Temporarily Closed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label form-label-custom">Operating Hours</label>
+                        <input type="text" name="opening_hours" class="form-control custom-input"
+                            placeholder="e.g. Mon-Sat 09:00 - 18:00"
+                            value="{{ location.opening_hours|default:'' }}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label form-label-custom">Emergency Service</label>
+                        <div class="switch-wrapper d-flex align-items-center justify-content-between mt-1">
+                            <label class="form-check-label text-dark fw-medium mb-0" for="emergencyService">Available 24/7</label>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-check-input m-0" type="checkbox" name="is_emergency_service"
+                                    role="switch" id="emergencyService"
+                                    {% if location.is_emergency_service %}checked{% endif %}>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Contact Information -->
+        <div class="card premium-card rounded-4 mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-3">
+                    <span class="icon-box icon-box-success">
+                        <i data-lucide="phone" class="w-5 h-5"></i>
+                    </span>
+                    Contact Information
+                </h5>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <label class="form-label form-label-custom">Phone Number</label>
+                        <div class="input-group">
+                            <span class="input-group-text input-group-text-custom">
+                                <i data-lucide="phone" class="w-4 h-4"></i>
+                            </span>
+                            <input type="tel" name="phone" class="form-control custom-input border-start-0"
+                                placeholder="+1 (555) 000-0000" value="{{ location.phone|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label form-label-custom">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text input-group-text-custom">
+                                <i data-lucide="mail" class="w-4 h-4"></i>
+                            </span>
+                            <input type="email" name="email" class="form-control custom-input border-start-0"
+                                placeholder="service@example.com" value="{{ location.email|default:'' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label form-label-custom">Website</label>
+                        <div class="input-group">
+                            <span class="input-group-text input-group-text-custom">
+                                <i data-lucide="globe" class="w-4 h-4"></i>
+                            </span>
+                            <input type="url" name="website" class="form-control custom-input border-start-0"
+                                placeholder="https://" value="{{ location.website|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 3: Location & Map -->
+        <div class="card premium-card rounded-4 mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-3">
+                    <span class="icon-box icon-box-danger">
+                        <i data-lucide="map-pin" class="w-5 h-5"></i>
+                    </span>
+                    Location Details
+                </h5>
+                
+                <div class="mb-4">
+                    <label class="form-label form-label-custom">Full Address</label>
+                    <textarea name="address" class="form-control custom-input" rows="2" placeholder="123 Main Street, Area, Landmark" required>{{ location.address.street|default:'' }}</textarea>
+                </div>
+                
+                <div class="row g-4 mb-4">
+                    <div class="col-md-4">
+                        <label class="form-label form-label-custom">City</label>
+                        <input type="text" name="city" class="form-control custom-input" placeholder="e.g. San Diego"
+                            value="{{ location.address.city|default:'' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label form-label-custom">State</label>
+                        <input type="text" name="state" class="form-control custom-input" placeholder="e.g. CA"
+                            value="{{ location.address.state|default:'' }}" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label form-label-custom">Zip Code</label>
+                        <input type="text" name="zip_code" class="form-control custom-input" placeholder="e.g. 92101"
+                            value="{{ location.address.zip_code|default:'' }}" required>
+                    </div>
+                </div>
+
+                <hr class="text-muted opacity-25 my-4">
+
+                <div class="row g-4">
+                    <div class="col-12">
+                        <label class="form-label form-label-custom">Map Pin Coordinates</label>
+                        <div class="mb-3 bg-light p-2 rounded-3 border">
+                            <div class="row g-2">
+                                <div class="col-md-9">
+                                    <input type="text" id="locationSearch" class="form-control custom-input border-0 bg-white" placeholder="Search a location to set pin (e.g. Kerala, India)">
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" id="searchLocationBtn" class="btn btn-dark w-100 h-100 rounded-3">Find on Map</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div id="map" class="shadow-sm border" style="height: 380px; border-radius: 12px; z-index: 1;"></div>
+                        
+                        <div class="d-flex align-items-center justify-content-between mt-3 bg-light p-3 rounded-3 border">
+                            <div class="small text-muted d-flex align-items-center gap-2">
+                                <i data-lucide="mouse-pointer-click" class="w-4 h-4"></i>
+                                Click/Drag marker to fine-tune
+                            </div>
+                            <div class="d-flex gap-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted small fw-bold">LAT:</span>
+                                    <input type="text" id="mapLat" name="latitude" class="form-control form-control-sm bg-white border-0 text-center shadow-sm" style="width: 90px;" value="{{ location.address.latitude|default:'' }}" readonly required>
+                                </div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted small fw-bold">LNG:</span>
+                                    <input type="text" id="mapLng" name="longitude" class="form-control form-control-sm bg-white border-0 text-center shadow-sm" style="width: 90px;" value="{{ location.address.longitude|default:'' }}" readonly required>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 4: Amenities -->
+        {% if amenities %}
+        <div class="card premium-card rounded-4 mb-4">
+            <div class="card-body p-4 p-md-5">
+                <h5 class="fw-bold mb-4 d-flex align-items-center gap-3">
+                    <span class="icon-box icon-box-warning">
+                        <i data-lucide="coffee" class="w-5 h-5"></i>
+                    </span>
+                    Available Amenities
+                </h5>
+                <div class="row g-3">
+                    {% for amenity in amenities %}
+                    <div class="col-sm-6 col-md-4 col-lg-3">
+                        <div class="amenity-item h-100">
+                            <input class="amenity-checkbox" type="checkbox" name="amenities"
+                                value="{{ amenity.id }}" id="amenity{{ amenity.id }}"
+                                {% if amenity.id in selected_amenities %}checked{% endif %}>
+                            <label class="amenity-label w-100 shadow-sm m-0" for="amenity{{ amenity.id }}">
+                                <i data-lucide="check-circle-2" class="w-5 h-5 check-icon"></i>
+                                {{ amenity.name }}
+                            </label>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="d-flex flex-column flex-sm-row gap-3 pb-5 mt-5">
+            <a href="{% url 'service-locations-list' %}" class="btn btn-light px-5 py-3 fw-bold border rounded-3 text-secondary shadow-sm" style="min-width: 150px;">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-emerald flex-grow-1 py-3 fw-bold rounded-3 shadow-sm d-flex justify-content-center align-items-center gap-2">
+                <i data-lucide="save" class="w-5 h-5"></i>
+                {% if is_edit %}Save Changes{% else %}Publish Service Center{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
